@@ -71,7 +71,7 @@ MainWindow::MainWindow (QWidget *parent) :
   channels(0),
   serialPort (nullptr),
   STATE (WAIT_START),
-  NUMBER_OF_POINTS (500)
+  NUMBER_OF_POINTS (600)
 {
   ui->setupUi (this);
 
@@ -84,6 +84,9 @@ MainWindow::MainWindow (QWidget *parent) :
   /* Wheel over plot when plotting */
   connect (ui->plot, SIGNAL (mouseWheel (QWheelEvent*)), this, SLOT (on_mouse_wheel_in_plot (QWheelEvent*)));
 
+  /* TEST  Sending data over COM on ENTER or \r\n TODO*/
+  connect (ui->textSend_UartWindow, SIGNAL (mouseWheel (QWheelEvent*)), this, SLOT (on_mouse_wheel_in_plot (QWheelEvent*)));
+
   /* Slot for printing coordinates */
   connect (ui->plot, SIGNAL (mouseMove (QMouseEvent*)), this, SLOT (onMouseMoveInPlot (QMouseEvent*)));
 
@@ -93,6 +96,7 @@ MainWindow::MainWindow (QWidget *parent) :
 
   /* Connect update timer to replot slot */
   connect (&updateTimer, SIGNAL (timeout()), this, SLOT (replot()));
+
 
   m_csvFile = nullptr;
 }
@@ -124,7 +128,7 @@ void MainWindow::createUI()
       {
         enable_com_controls (false);
         ui->statusBar->showMessage ("No ports detected.");
-        ui->savePNGButton->setEnabled (false);
+        ui->actionRecord_PNG->setEnabled (false);
         return;
       }
 
@@ -132,9 +136,12 @@ void MainWindow::createUI()
     for (QSerialPortInfo port : QSerialPortInfo::availablePorts())
       {
         ui->comboPort->addItem (port.portName());
+        UpdatePortControls();
+        enable_com_controls (true);
       }
-
-    /* Populate baud rate combo box with standard rates */
+}
+void MainWindow::UpdatePortControls()
+    {/* Populate baud rate combo box with standard rates */
     ui->comboBaud->addItem ("1200");
     ui->comboBaud->addItem ("2400");
     ui->comboBaud->addItem ("4800");
@@ -152,7 +159,7 @@ void MainWindow::createUI()
     ui->comboBaud->addItem ("921600");
 
     /* Select 115200 bits by default */
-    ui->comboBaud->setCurrentIndex (7);
+    //ui->comboBaud->setCurrentIndex (3);
 
     /* Populate data bits combo box */
     ui->comboData->addItem ("8 bits");
@@ -169,6 +176,10 @@ void MainWindow::createUI()
 
     /* Initialize the listwidget */
     ui->listWidget_Channels->clear();
+
+    // try to load settings, or populate with default value
+    ui->actionLoad_Settings-> trigger();
+
 }
 /** ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
@@ -201,7 +212,8 @@ void MainWindow::setupPlot()
     ui->plot->xAxis->setTickLabelColor (gui_colors[2]);
     ui->plot->xAxis->setTickLabelFont (font);
     /* Range */
-    ui->plot->xAxis->setRange (dataPointNumber - ui->spinPoints->value(), dataPointNumber);
+    // ui->plot->xAxis->setRange (dataPointNumber - ui->spinPoints->value(), dataPointNumber); Revese
+    ui->plot->xAxis->setRange (ui->spinPoints->value(), dataPointNumber); // 0 on left
 
     /* Y Axis */
     ui->plot->yAxis->grid()->setPen (QPen(gui_colors[2], 1, Qt::DotLine));
@@ -214,7 +226,7 @@ void MainWindow::setupPlot()
     ui->plot->yAxis->setTickLabelColor (gui_colors[2]);
     ui->plot->yAxis->setTickLabelFont (font);
     /* Range */
-    //ui->plot->yAxis->setRange (ui->spinAxesMin->value(), ui->spinAxesMax->value());
+    ui->plot->yAxis->setRange (ui->spinAxesMin->value(), ui->spinAxesMax->value());
     /* User can change Y axis tick step with a spin box */
     //ui->plot->yAxis->setAutoTickStep (false);
     //ui->plot->yAxis->(ui->spinYStep->value());
@@ -235,7 +247,7 @@ void MainWindow::setupPlot()
     ui->plot->legend->setBrush (gui_colors[3]);
     ui->plot->legend->setBorderPen (gui_colors[2]);
     /* By default, the legend is in the inset layout of the main axis rect. So this is how we access it to change legend placement */
-    ui->plot->axisRect()->insetLayout()->setInsetAlignment (0, Qt::AlignTop|Qt::AlignRight);
+    ui->plot->axisRect()->insetLayout()->setInsetAlignment (0, Qt::AlignTop|Qt::AlignLeft);
 }
 /** ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
@@ -256,6 +268,8 @@ void MainWindow::enable_com_controls (bool enable)
   ui->actionConnect->setEnabled (enable);
   ui->actionPause_Plot->setEnabled (!enable);
   ui->actionDisconnect->setEnabled (!enable);
+
+  loadSettings();
 }
 /** ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
@@ -276,7 +290,7 @@ void MainWindow::openPort (QSerialPortInfo portInfo, int baudRate, QSerialPort::
     connect (this, SIGNAL(portClosed()), this, SLOT(onPortClosed()));
     connect (this, SIGNAL(newData(QStringList)), this, SLOT(onNewDataArrived(QStringList)));
     connect (serialPort, SIGNAL(readyRead()), this, SLOT(readData()));
-    
+  //  connect (serialPort, SIGNAL(bytesWritten()), this, SLOT(writeData()));
     connect (this, SIGNAL(newData(QStringList)), this, SLOT(saveStream(QStringList)));
 
     if (serialPort->open (QIODevice::ReadWrite))
@@ -309,12 +323,13 @@ void MainWindow::onPortClosed()
     closeCsvFile();
     
     disconnect (serialPort, SIGNAL(readyRead()), this, SLOT(readData()));
+  //  disconnect (serialPort, SIGNAL(readySend()), this, SLOT(writeData()));
     disconnect (this, SIGNAL(portOpenOK()), this, SLOT(portOpenedSuccess()));             // Disconnect port signals to GUI slots
     disconnect (this, SIGNAL(portOpenFail()), this, SLOT(portOpenedFail()));
     disconnect (this, SIGNAL(portClosed()), this, SLOT(onPortClosed()));
     disconnect (this, SIGNAL(newData(QStringList)), this, SLOT(onNewDataArrived(QStringList)));
-  
     disconnect (this, SIGNAL(newData(QStringList)), this, SLOT(saveStream(QStringList)));
+    ui->PortControlsBox->setVisible(true);
 }
 /** ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
@@ -347,8 +362,10 @@ void MainWindow::portOpenedSuccess()
     /* Lock the save option while recording */
     ui->actionRecord_stream->setEnabled(false);
 
+    ui->PortControlsBox->setVisible(false); // Hide Port settings
+
     updateTimer.start (20);                                                                // Slot is refreshed 20 times per second
-    connected = true;                                                                      // Set flags
+    connected = true;                                                                     // Set flags
     plotting = true;
 }
 /** ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
@@ -368,7 +385,8 @@ void MainWindow::portOpenedFail()
  */
 void MainWindow::replot()
 {
-  ui->plot->xAxis->setRange (dataPointNumber - ui->spinPoints->value(), dataPointNumber);
+ // ui->plot->xAxis->setRange (dataPointNumber - ui->spinPoints->value(), dataPointNumber);
+  //ui->plot->xAxis->setRange (ui->spinPoints->value(), dataPointNumber);
   ui->plot->replot();
 }
 /** ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
@@ -448,6 +466,9 @@ void MainWindow::onNewDataArrived(QStringList newData)
 }
 /** ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
+
+
+
 /**
  * @brief Slot for spin box for plot minimum value on y axis
  * @param arg1
@@ -494,6 +515,10 @@ void MainWindow::readData()
                     }
                     break;
                 case IN_MESSAGE:                                                          // If state is IN_MESSAGE
+                    if(temp[i] == CLEAR_MSG) {                                                  // If recieve # symbol IN-MESSAGE
+                        ui->actionClear->triggered(true);
+                        STATE = WAIT_START;
+                    }
                     if(temp[i] == END_MSG) {                                              // If char examined is ;, switch state to END_MSG
                         STATE = WAIT_START;
                         QStringList incomingData = receivedData.split(' ');               // Split string received from port and put it into list
@@ -517,6 +542,8 @@ void MainWindow::readData()
 }
 /** ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
+
+/** ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 /**
  * @brief Number of axes combo; when changed, display axes colors in status bar
  * @param index
@@ -548,9 +575,10 @@ void MainWindow::on_spinYStep_valueChanged(int arg1)
 /**
  * @brief Save a PNG image of the plot to current EXE directory
  */
-void MainWindow::on_savePNGButton_clicked()
+void MainWindow::on_actionRecord_PNG_triggered()
 {
     ui->plot->savePng (QString::number(dataPointNumber) + ".png", 1920, 1080, 2, 50);
+    ui->statusBar->showMessage ("PNG Saved.");
 }
 /** ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
@@ -642,7 +670,10 @@ void MainWindow::legend_double_click(QCPLegend *legend, QCPAbstractLegendItem *i
 void MainWindow::on_spinPoints_valueChanged (int arg1)
 {
     Q_UNUSED(arg1)
-    ui->plot->xAxis->setRange (dataPointNumber - ui->spinPoints->value(), dataPointNumber);
+   // ui->plot->xAxis->setRange (dataPointNumber - ui->spinPoints->value(), dataPointNumber);
+    ui->plot->xAxis->setRange (ui->spinPoints->value(), 0); // TODO Поправить обнуление позиции если график сдвигался мышью
+
+    // ui->plot->axisRect()->setRangeDrag;
     ui->plot->replot();
 }
 /** ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
@@ -674,6 +705,7 @@ void MainWindow::on_actionConnect_triggered()
           ui->actionConnect->setEnabled (false);
           ui->actionPause_Plot->setEnabled (true);
           ui->statusBar->showMessage ("Plot restarted!");
+          ui->actionRecord_PNG->setEnabled (true);
         }
     }
   else
@@ -786,8 +818,9 @@ void MainWindow::on_actionDisconnect_triggered()
       ui->actionRecord_stream->setEnabled(true);
       receivedData.clear();                                                             // Clear received string
 
-      ui->savePNGButton->setEnabled (false);
+      ui->actionRecord_PNG->setEnabled (false);
       enable_com_controls (true);
+      dataPointNumber = 0;
     }
 }
 /** ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
@@ -796,11 +829,18 @@ void MainWindow::on_actionDisconnect_triggered()
  * @brief Clear all channels data and reset plot area
  *
  * This function will not delete the channel itself (legend will stay)
+ * implemented Solve issue #7: press clear button delete data but not labels
  */
 void MainWindow::on_actionClear_triggered()
 {
-    ui->plot->clearPlottables();
-    ui->listWidget_Channels->clear();
+   // ui->plot->clearPlottables();
+   // ui->listWidget_Channels->clear();
+    ui->textEdit_UartWindow->clear();
+    for( int g=0; g<ui->plot->graphCount(); g++ )
+    {
+        ui->plot->graph(g)->data().data()->clear();
+    }
+    ui->plot->replot();
     channels = 0;
     dataPointNumber = 0;
     emit setupPlot();
@@ -861,11 +901,13 @@ void MainWindow::on_pushButton_TextEditHide_clicked()
     if(ui->pushButton_TextEditHide->isChecked())
     {
         ui->textEdit_UartWindow->setVisible(false);
+        ui->textSend_UartWindow->setVisible(false);
         ui->pushButton_TextEditHide->setText("Show TextBox");
     }
     else
     {
         ui->textEdit_UartWindow->setVisible(true);
+        ui->textSend_UartWindow->setVisible(true);
         ui->pushButton_TextEditHide->setText("Hide TextBox");
     }
 }
@@ -883,6 +925,32 @@ void MainWindow::on_pushButton_ShowallData_clicked()
         ui->pushButton_ShowallData->setText("Show All Incoming Data");
     }
 }
+
+
+void MainWindow::on_pushButton_SendToCom_clicked()  // Send data to com
+{
+        if(connected)
+        {
+            QByteArray dataBuf;
+            QString data = ui->textSend_UartWindow->toPlainText();
+            if(data.isEmpty()){
+                ui->statusBar->showMessage ("Nothing to send");
+                return;
+            }
+            dataBuf = data.toUtf8();
+            if(serialPort!=nullptr && connected)
+            {
+                serialPort->write(dataBuf);
+                ui->statusBar->showMessage ("Sended:"+dataBuf);
+                ui->textSend_UartWindow->clear();
+            }
+
+        }
+        else {
+            ui->statusBar->showMessage ("Cant Send, Port not open");
+        }
+}
+
 
 void MainWindow::on_pushButton_AutoScale_clicked()
 {
@@ -907,7 +975,7 @@ void MainWindow::on_listWidget_Channels_itemDoubleClicked(QListWidgetItem *item)
     if(ui->plot->graph(graphIdx)->visible())
     {
         ui->plot->graph(graphIdx)->setVisible(false);
-        item->setBackgroundColor(Qt::black);
+        item->setBackground(Qt::black);
     }
     else
     {
@@ -924,5 +992,106 @@ void MainWindow::on_pushButton_clicked()
     for (QSerialPortInfo port : QSerialPortInfo::availablePorts())
     {
         ui->comboPort->addItem (port.portName());
+        if (ui->comboPort->count() != 0)
+        {
+            UpdatePortControls();
+            enable_com_controls (true);
+        }
     }
+}
+
+
+
+/** ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
+void MainWindow::on_actionLoad_Settings_triggered()
+{
+    loadSettings();
+    ui->comboPort->setCurrentIndex(m_prefs.port);
+    ui->comboBaud->setCurrentIndex(m_prefs.baud);
+    ui->comboData->setCurrentIndex(m_prefs.data);
+    ui->comboParity->setCurrentIndex(m_prefs.parity);
+    ui->comboStop->setCurrentIndex(m_prefs.stop);
+    ui->spinPoints->setValue(m_prefs.spinPoints);
+    ui->spinYStep->setValue(m_prefs.spinYStep);
+    ui->spinAxesMin->setValue(m_prefs.spinAxesMin);
+    ui->spinAxesMax->setValue(m_prefs.spinAxesMax);
+    if (ui->pushButton_TextEditHide->isChecked() != m_prefs.TextEditHide)
+        {
+        ui->pushButton_TextEditHide-> click();
+        }
+    if (ui->pushButton_ShowallData->isChecked() == m_prefs.ShowallData)
+        {
+        ui->pushButton_ShowallData-> click();
+        }
+    if (ui->actionRecord_stream->isChecked() != m_prefs.Record_stream)
+        {
+        ui->actionRecord_stream-> trigger();
+        }
+    ui->statusBar->showMessage ("Settings Loaded");
+
+}
+
+void MainWindow::on_actionSave_Settings_triggered()
+{
+    saveSettings();
+    ui->statusBar->showMessage ("Settings Saved");
+
+}
+
+/**
+ * @brief Load settings from config file and populate preferences
+ *
+ */
+void MainWindow::loadSettings()
+{
+  QSettings settings("serial_port_plotter.ini", QSettings::IniFormat);
+  m_prefs.port = settings.value("port", 0).toInt();
+  m_prefs.baud = settings.value("baud", 3).toInt();
+  m_prefs.data = settings.value("data", 0).toInt();
+  m_prefs.parity = settings.value("parity", 0).toInt();
+  m_prefs.stop = settings.value("stop", 0).toInt();
+  m_prefs.spinPoints = settings.value("spinPoints", 600).toInt();
+  m_prefs.spinYStep = settings.value("spinYStep", 10).toInt();
+  m_prefs.spinAxesMin = settings.value("spinAxesMin", -100).toInt();
+  m_prefs.spinAxesMax = settings.value("spinAxesMax", 400).toInt();
+  m_prefs.TextEditHide = settings.value("TextEditHide", true).toBool();
+  m_prefs.ShowallData = settings.value("ShowallData", true).toBool();
+  m_prefs.Record_stream = settings.value("Record_stream", true).toBool();
+
+}
+
+/** ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
+/**
+ * @brief Load settings from config file and populate preferences
+ *
+ */
+void MainWindow::saveSettings()
+{
+    QSettings settings("serial_port_plotter.ini", QSettings::IniFormat);
+    settings.setValue("port", ui->comboPort->currentIndex());
+    settings.setValue("baud", ui->comboBaud->currentIndex());
+    settings.setValue("data", ui->comboData->currentIndex());
+    settings.setValue("parity", ui->comboParity->currentIndex());
+    settings.setValue("stop", ui->comboStop->currentIndex());
+    settings.setValue("spinPoints", ui->spinPoints->value());
+    settings.setValue("spinYStep", ui->spinYStep->value());
+    settings.setValue("spinAxesMin",  ui->spinAxesMin->value());
+    settings.setValue("spinAxesMax",  ui->spinAxesMax->value());
+    settings.setValue("TextEditHide", ui->pushButton_TextEditHide->isChecked());
+    settings.setValue("ShowallData", ui->pushButton_ShowallData->isChecked());
+    settings.setValue("Record_stream", ui->actionRecord_stream->isChecked());
+
+}
+/** ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
+/**
+ * @brief t the close event, save settings
+ *
+ */
+void MainWindow::closeEvent(QCloseEvent *event)
+{
+  //  saveSettings();
+    event->accept();
 }

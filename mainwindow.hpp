@@ -32,8 +32,11 @@
 #include <QSerialPortInfo>
 #include "helpwindow.hpp"
 #include "qcustomplot/qcustomplot.h"
+#include <QSettings>
+#include <QEvent>
 
 #define START_MSG       '$'
+#define CLEAR_MSG       '#'
 #define END_MSG         ';'
 
 #define WAIT_START      1
@@ -53,7 +56,9 @@ class MainWindow : public QMainWindow
 
 public:
     explicit MainWindow(QWidget *parent = nullptr);
+    void closeEvent(QCloseEvent *event);                                                  // close event to save settings TODO, CHANGE TO BUTTON
     ~MainWindow();
+
 
 private slots:
     void on_comboPort_currentIndexChanged(const QString &arg1);                           // Slot displays message on status bar
@@ -66,9 +71,10 @@ private slots:
     void on_spinAxesMin_valueChanged(int arg1);                                           // Changing lower limit for the plot
     void on_spinAxesMax_valueChanged(int arg1);                                           // Changing upper limit for the plot
     void readData();                                                                      // Slot for inside serial port
-    //void on_comboAxes_currentIndexChanged(int index);                                     // Display number of axes and colors in status bar
+ //   void writeData(const QByteArray &data);                                               // Slot for inside serial port
+    //void on_comboAxes_currentIndexChanged(int index);                                   // Display number of axes and colors in status bar
     void on_spinYStep_valueChanged(int arg1);                                             // Spin box for changing Y axis tick step
-    void on_savePNGButton_clicked();                                                      // Button for saving JPG
+    void on_actionRecord_PNG_triggered();                                              // Button for saving JPG
     void onMouseMoveInPlot (QMouseEvent *event);                                          // Displays coordinates of mouse pointer when clicked in plot in status bar
     void on_spinPoints_valueChanged (int arg1);                                           // Spin box controls how many data points are collected and displayed
     void on_mouse_wheel_in_plot (QWheelEvent *event);                                     // Makes wheel mouse works while plotting
@@ -83,10 +89,14 @@ private slots:
     void on_actionPause_Plot_triggered();
     void on_actionClear_triggered();
     void on_actionRecord_stream_triggered();
+    void on_actionLoad_Settings_triggered();
+    void on_actionSave_Settings_triggered();
 
     void on_pushButton_TextEditHide_clicked();
 
     void on_pushButton_ShowallData_clicked();
+
+    void on_pushButton_SendToCom_clicked(); // to send data over COM
 
     void on_pushButton_AutoScale_clicked();
 
@@ -95,6 +105,8 @@ private slots:
     void on_listWidget_Channels_itemDoubleClicked(QListWidgetItem *item);
 
     void on_pushButton_clicked();
+    void UpdatePortControls();
+
 
 signals:
     void portOpenFail();                                                                  // Emitted when cannot open port
@@ -120,7 +132,7 @@ private:
     int data_format;   
 
     /* Textbox Related */
-    bool filterDisplayedData = true;
+    bool filterDisplayedData = false;
 
     /* Listview Related */
     QStringListModel *channelListModel;
@@ -130,6 +142,27 @@ private:
     QFile* m_csvFile = nullptr;
     void openCsvFile(void);
     void closeCsvFile(void);
+
+
+    /* Preferences  TODO Fix number of saved prefs*/
+        struct SPreferences
+        {
+            int port;                                                                       // last port used
+            int baud;                                                                       // last baudrate item used
+            int data;                                                                       // last data length used
+            int parity;                                                                     // last parity used
+            int stop;                                                                       // last stop bit number
+            int spinPoints;
+            int spinYStep;                                                                  // last value used
+            int spinAxesMin;                                                                // last value used
+            int spinAxesMax;                                                                // last value used
+            bool TextEditHide;
+            bool ShowallData;
+            bool Record_stream;
+        };
+        SPreferences m_prefs;                                                               // preferences stucture
+
+
 
     QTimer updateTimer;                                                                   // Timer used for replotting the plot
     QTime timeOfFirstData;                                                                // Record the time of the first data point
@@ -145,6 +178,9 @@ private:
     void setupPlot();                                                                     // Setup the QCustomPlot
                                                                                           // Open the inside serial port with these parameters
     void openPort(QSerialPortInfo portInfo, int baudRate, QSerialPort::DataBits dataBits, QSerialPort::Parity parity, QSerialPort::StopBits stopBits);
+    void loadSettings();                                                                  // load settings to populate preferences fro; config file
+    void saveSettings();                                                                  // save preferences in config file
+
 };
 
 

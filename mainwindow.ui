@@ -300,7 +300,7 @@
                 <number>10</number>
                </property>
                <property name="value">
-                <number>1000</number>
+                <number>600</number>
                </property>
               </widget>
              </item>
@@ -323,7 +323,7 @@
                 </size>
                </property>
                <property name="text">
-                <string>Y STEP</string>
+                <string>Y STEPS</string>
                </property>
               </widget>
              </item>
@@ -351,7 +351,7 @@
                 <number>1</number>
                </property>
                <property name="value">
-                <number>10</number>
+                <number>20</number>
                </property>
               </widget>
              </item>
@@ -453,7 +453,7 @@
                 <number>10</number>
                </property>
                <property name="value">
-                <number>100</number>
+                <number>400</number>
                </property>
               </widget>
              </item>
@@ -528,13 +528,6 @@
              </property>
             </widget>
            </item>
-           <item>
-            <widget class="QPushButton" name="savePNGButton">
-             <property name="text">
-              <string>Save PNG</string>
-             </property>
-            </widget>
-           </item>
           </layout>
          </item>
         </layout>
@@ -558,7 +551,7 @@
         <property name="minimumSize">
          <size>
           <width>0</width>
-          <height>80</height>
+          <height>120</height>
          </size>
         </property>
         <property name="title">
@@ -583,10 +576,26 @@
            <item>
             <widget class="QPushButton" name="pushButton_ShowallData">
              <property name="text">
-              <string>Show All Incoming Data</string>
+              <string>Filter Incoming Data</string>
              </property>
              <property name="checkable">
               <bool>true</bool>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="pushButton_SendToCom">
+             <property name="text">
+              <string>Send to COM</string>
+             </property>
+             <property name="checkable">
+              <bool>true</bool>
+             </property>
+             <property name="checked">
+              <bool>false</bool>
              </property>
             </widget>
            </item>
@@ -599,6 +608,19 @@
     </item>
     <item row="0" column="1">
      <layout class="QGridLayout" name="gridLayout_4">
+      <item row="0" column="0">
+       <spacer name="horizontalSpacer">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>1</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
       <item row="1" column="0">
        <widget class="QSplitter" name="splitter">
         <property name="sizePolicy">
@@ -640,8 +662,14 @@
            <height>400</height>
           </size>
          </property>
+         <property name="cursor">
+          <cursorShape>CrossCursor</cursorShape>
+         </property>
         </widget>
         <widget class="QTextEdit" name="textEdit_UartWindow">
+         <property name="enabled">
+          <bool>true</bool>
+         </property>
          <property name="sizePolicy">
           <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
            <horstretch>0</horstretch>
@@ -651,24 +679,64 @@
          <property name="minimumSize">
           <size>
            <width>0</width>
-           <height>150</height>
+           <height>100</height>
           </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>16777215</width>
+           <height>200</height>
+          </size>
+         </property>
+         <property name="acceptDrops">
+          <bool>false</bool>
+         </property>
+         <property name="readOnly">
+          <bool>true</bool>
+         </property>
+         <property name="textInteractionFlags">
+          <set>Qt::TextSelectableByKeyboard|Qt::TextSelectableByMouse</set>
+         </property>
+        </widget>
+        <widget class="QTextEdit" name="textSend_UartWindow">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>25</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>16777215</width>
+           <height>25</height>
+          </size>
+         </property>
+         <property name="cursor" stdset="0">
+          <cursorShape>IBeamCursor</cursorShape>
+         </property>
+         <property name="inputMethodHints">
+          <set>Qt::ImhNone</set>
+         </property>
+         <property name="verticalScrollBarPolicy">
+          <enum>Qt::ScrollBarAlwaysOff</enum>
+         </property>
+         <property name="horizontalScrollBarPolicy">
+          <enum>Qt::ScrollBarAlwaysOff</enum>
+         </property>
+         <property name="acceptRichText">
+          <bool>false</bool>
+         </property>
+         <property name="cursorWidth">
+          <number>2</number>
          </property>
         </widget>
        </widget>
-      </item>
-      <item row="0" column="0">
-       <spacer name="horizontalSpacer">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>40</width>
-          <height>1</height>
-         </size>
-        </property>
-       </spacer>
       </item>
      </layout>
     </item>
@@ -703,6 +771,11 @@
    <addaction name="actionHow_to_use"/>
    <addaction name="separator"/>
    <addaction name="actionRecord_stream"/>
+   <addaction name="actionRecord_PNG"/>
+   <addaction name="separator"/>
+   <addaction name="separator"/>
+   <addaction name="actionSave_Settings"/>
+   <addaction name="actionLoad_Settings"/>
   </widget>
   <action name="actionConnect">
    <property name="icon">
@@ -832,6 +905,63 @@
    </property>
    <property name="visible">
     <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionLoad_Settings">
+   <property name="icon">
+    <iconset resource="res/serial_port_plotter.qrc">
+     <normaloff>:/serial_port_plotter/Settings_Load_nor.png</normaloff>
+     <normalon>:/serial_port_plotter/Settings_Load_nor.png</normalon>
+     <disabledoff>:/serial_port_plotter/Settings_Load_dis.png</disabledoff>
+     <disabledon>:/serial_port_plotter/Settings_Load_dis.png</disabledon>
+     <activeoff>:/serial_port_plotter/Settings_Load_act.png</activeoff>
+     <activeon>:/serial_port_plotter/Settings_Load_act.png</activeon>
+     <selectedoff>:/serial_port_plotter/Settings_Load_act.png</selectedoff>
+     <selectedon>:/serial_port_plotter/Settings_Load_act.png</selectedon>:/serial_port_plotter/Settings_Load_nor.png</iconset>
+   </property>
+   <property name="text">
+    <string>Load Settings</string>
+   </property>
+   <property name="toolTip">
+    <string>Load Settings</string>
+   </property>
+  </action>
+  <action name="actionSave_Settings">
+   <property name="icon">
+    <iconset resource="res/serial_port_plotter.qrc">
+     <normaloff>:/serial_port_plotter/Settings_Save_nor.png</normaloff>
+     <normalon>:/serial_port_plotter/Settings_Save_nor.png</normalon>
+     <disabledoff>:/serial_port_plotter/Settings_Save_dis.png</disabledoff>
+     <disabledon>:/serial_port_plotter/Settings_Save_dis.png</disabledon>
+     <activeoff>:/serial_port_plotter/Settings_Save_act.png</activeoff>
+     <activeon>:/serial_port_plotter/Settings_Save_act.png</activeon>
+     <selectedoff>:/serial_port_plotter/Settings_Save_act.png</selectedoff>
+     <selectedon>:/serial_port_plotter/Settings_Save_act.png</selectedon>:/serial_port_plotter/Settings_Save_nor.png</iconset>
+   </property>
+   <property name="text">
+    <string>Save Settings</string>
+   </property>
+   <property name="toolTip">
+    <string>Save Settings</string>
+   </property>
+  </action>
+  <action name="actionRecord_PNG">
+   <property name="icon">
+    <iconset resource="res/serial_port_plotter.qrc">
+     <normaloff>:/serial_port_plotter/ExPNG_nor.png</normaloff>
+     <normalon>:/serial_port_plotter/ExPNG_nor.png</normalon>
+     <disabledoff>:/serial_port_plotter/ExPNG_dis.png</disabledoff>
+     <disabledon>:/serial_port_plotter/ExPNG_dis.png</disabledon>
+     <activeoff>:/serial_port_plotter/ExPNG_act.png</activeoff>
+     <activeon>:/serial_port_plotter/ExPNG_act.png</activeon>
+     <selectedoff>:/serial_port_plotter/ExPNG_act.png</selectedoff>
+     <selectedon>:/serial_port_plotter/ExPNG_act.png</selectedon>:/serial_port_plotter/ExPNG_nor.png</iconset>
+   </property>
+   <property name="text">
+    <string>Record PNG</string>
+   </property>
+   <property name="toolTip">
+    <string>Record the currently plot view in PNG image.</string>
    </property>
   </action>
  </widget>

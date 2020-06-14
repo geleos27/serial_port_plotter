@@ -31,6 +31,9 @@ int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
 
+    a.setOrganizationName("SerialPortPlotter");         // give the folder name to store settings in local home
+    a.setApplicationName("SerialPortPlotter_Amperka");          // give file config name (.conf)
+
     /* Apply style sheet */
     QFile file(":/serial_port_plotter/styles/style.qss");
     if(file.open(QIODevice::ReadOnly | QIODevice::Text))
@@ -43,7 +46,7 @@ int main(int argc, char *argv[])
     MainWindow w;
     QIcon appIcon(":/serial_port_plotter/icons/serial_port_icon.icns");
     w.setWindowIcon(appIcon);
-    w.setWindowTitle("Serial Port Plotter v1.3.0");
+    w.setWindowTitle("Serial Port Plotter v1.3.0 Amperka Beta v0.3");
     w.show();
 
     return a.exec();
