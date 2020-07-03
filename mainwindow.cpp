@@ -84,8 +84,6 @@ MainWindow::MainWindow (QWidget *parent) :
   /* Wheel over plot when plotting */
   connect (ui->plot, SIGNAL (mouseWheel (QWheelEvent*)), this, SLOT (on_mouse_wheel_in_plot (QWheelEvent*)));
 
-  /* TEST  Sending data over COM on ENTER or \r\n TODO*/
-  connect (ui->textSend_UartWindow, SIGNAL (mouseWheel (QWheelEvent*)), this, SLOT (on_mouse_wheel_in_plot (QWheelEvent*)));
 
   /* Slot for printing coordinates */
   connect (ui->plot, SIGNAL (mouseMove (QMouseEvent*)), this, SLOT (onMouseMoveInPlot (QMouseEvent*)));
@@ -421,9 +419,22 @@ void MainWindow::onNewDataArrived(QStringList newData)
             while (ui->plot->plottableCount() <= channel)
               {
                 /* Add new channel data */
+
                 ui->plot->addGraph();
                 ui->plot->graph()->setPen (line_colors[channels % CUSTOM_LINE_COLORS]);
-                ui->plot->graph()->setName (QString("Channel %1").arg(channels));
+                QString channelscount = QString("Count %1").arg(m_prefs.channelnames.size());
+                if (i < (m_prefs.channelnames.size()))                                           // /3 because have x3 elements
+                {
+                    ui->plot->graph()->setName (m_prefs.channelnames.value(i).channelName);
+                    ui->plot->graph()->setVisible(m_prefs.channelnames.value(i).channelVisibie);
+                   // ui->statusBar->showMessage("channelscount");
+                }
+                else
+                {
+                    ui->plot->graph()->setName (QString("Channel %1").arg(channels+1));
+                }
+
+                ui->plot->graph()->setVisible(m_prefs.channelnames.value(i).channelVisibie);
                 if(ui->plot->legend->item(channels))
                 {
                     ui->plot->legend->item (channels)->setTextColor (line_colors[channels % CUSTOM_LINE_COLORS]);
@@ -431,6 +442,8 @@ void MainWindow::onNewDataArrived(QStringList newData)
                 ui->listWidget_Channels->addItem(ui->plot->graph()->name());
                 ui->listWidget_Channels->item(channel)->setForeground(QBrush(line_colors[channels % CUSTOM_LINE_COLORS]));
                 channels++;
+
+                ui->statusBar->showMessage(channelscount);
               }
 
             /* [TODO] Method selection and plotting */
@@ -833,13 +846,9 @@ void MainWindow::on_actionDisconnect_triggered()
  */
 void MainWindow::on_actionClear_triggered()
 {
-   // ui->plot->clearPlottables();
-   // ui->listWidget_Channels->clear();
+    ui->plot->clearPlottables();
+    ui->listWidget_Channels->clear();
     ui->textEdit_UartWindow->clear();
-    for( int g=0; g<ui->plot->graphCount(); g++ )
-    {
-        ui->plot->graph(g)->data().data()->clear();
-    }
     ui->plot->replot();
     channels = 0;
     dataPointNumber = 0;
@@ -941,7 +950,7 @@ void MainWindow::on_pushButton_SendToCom_clicked()  // Send data to com
             if(serialPort!=nullptr && connected)
             {
                 serialPort->write(dataBuf);
-                ui->statusBar->showMessage ("Sended:"+dataBuf);
+                ui->statusBar->showMessage ("Sended: "+dataBuf);
                 ui->textSend_UartWindow->clear();
             }
 
@@ -1032,13 +1041,6 @@ void MainWindow::on_actionLoad_Settings_triggered()
 
 }
 
-void MainWindow::on_actionSave_Settings_triggered()
-{
-    saveSettings();
-    ui->statusBar->showMessage ("Settings Saved");
-
-}
-
 /**
  * @brief Load settings from config file and populate preferences
  *
@@ -1059,9 +1061,27 @@ void MainWindow::loadSettings()
   m_prefs.ShowallData = settings.value("ShowallData", true).toBool();
   m_prefs.Record_stream = settings.value("Record_stream", true).toBool();
 
+  m_prefs.channelnames.clear();
+  int size = settings.beginReadArray("channelnames");   // Read channelNames in cycle
+  for (int i = 0; i < size; ++i) {
+      settings.setArrayIndex(i);
+      LegendChannelNames legendchannelnames;
+      legendchannelnames.channelName = settings.value("channelName").toString();
+      legendchannelnames.channelVisibie = settings.value("channelVisibie").toBool();
+      m_prefs.channelnames.append(legendchannelnames);
+  }
+  settings.endArray();
+
 }
 
 /** ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
+void MainWindow::on_actionSave_Settings_triggered()
+{
+    saveSettings();
+    ui->statusBar->showMessage ("Settings Saved");
+
+}
 
 /**
  * @brief Load settings from config file and populate preferences
@@ -1082,6 +1102,14 @@ void MainWindow::saveSettings()
     settings.setValue("TextEditHide", ui->pushButton_TextEditHide->isChecked());
     settings.setValue("ShowallData", ui->pushButton_ShowallData->isChecked());
     settings.setValue("Record_stream", ui->actionRecord_stream->isChecked());
+
+    settings.beginWriteArray("channelnames");
+    for (int i = 0; i < ui->plot->graphCount(); ++i) {
+        settings.setArrayIndex(i);
+        settings.setValue("channelName", ui->plot->graph(i)->name());
+        settings.setValue("channelVisibie", ui->plot->graph(i)->visible());
+    }
+    settings.endArray();
 
 }
 /** ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
