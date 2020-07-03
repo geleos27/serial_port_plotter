@@ -145,6 +145,18 @@ private:
 
 
     /* Preferences  TODO Fix number of saved prefs*/
+
+    struct LegendChannelNames {
+        QString channelName;
+        bool channelVisibie;
+    };
+
+    struct ButtonNames {
+        QString buttonName;
+        QString buttonCommand;
+        bool buttonVisible;
+    };
+
         struct SPreferences
         {
             int port;                                                                       // last port used
@@ -159,6 +171,9 @@ private:
             bool TextEditHide;
             bool ShowallData;
             bool Record_stream;
+            QList<LegendChannelNames>channelnames;                                             // ChannelNames Structure
+            QList<ButtonNames>buttonnames;                                                     // ButtonNames Structure
+
         };
         SPreferences m_prefs;                                                               // preferences stucture
 
