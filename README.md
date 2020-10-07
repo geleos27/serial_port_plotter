@@ -15,6 +15,11 @@ This is a Windows application that displays real time data from serial port. The
 - Exports to PNG
 - Exports to CSV
 - Autoscale to visible graph
+- Can send User commands over COM
+- Have buttons for sending common commands
+- Have big number to show Value of channel
+- Can actually SAVE and load settings
+- Plays sound if recieved "$@;" command over com
 
 ## Screenshot
 
@@ -62,6 +67,24 @@ Source and .pro file of the Qt Project are available. A standalone .exe is inclu
 
 All notable changes to this project will be documented below this line.
 This project adheres to [Semantic Versioning](http://semver.org/).
+
+
+## [1.3.0.A] - 2020-06-15
+### Info
+ - Trying to modify this programm to made full control on IR Reflow stations at [Amperka Forum](http://forum.amperka.ru/threads/%D0%98%D0%9A-%D0%BF%D0%B0%D1%8F%D0%BB%D1%8C%D0%BD%D0%B0%D1%8F-%D1%81%D1%82%D0%B0%D0%BD%D1%86%D0%B8%D1%8F-%D0%BD%D0%B0-arduino-mega-2560-%D0%94%D0%BE%D1%80%D0%B0%D0%B1%D0%BE%D1%82%D0%BA%D0%B0-%D1%81%D0%BA%D0%B5%D1%82%D1%87%D0%B0-ars_v2_lilium_jsn.10176/)
+
+### Added
+- Sending commands over COM port
+- Implemented Saving and loading configuration on program start and with buttons ( [Issue #10](https://github.com/CieNTi/serial_port_plotter/issues/10) THX: netbomo 5fd5021 )
+- channel legend moved to right & plotting from right corner.
+- implemented Plot Clean, by recieving command over COM (check inside help)
+- added fast command buttons
+
+### Bugfix
+- com port control enables correctly if port plotter was started before device connected to pc 
+- clean plot button now don't erase plottable names
+- Y-Tick count loads propperly. 
+
 
 ## [1.3.0] - 2018-08-01
 
