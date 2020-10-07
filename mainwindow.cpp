@@ -83,7 +83,7 @@ MainWindow::MainWindow (QWidget *parent) :
 
   /* Wheel over plot when plotting */
   connect (ui->plot, SIGNAL (mouseWheel (QWheelEvent*)), this, SLOT (on_mouse_wheel_in_plot (QWheelEvent*)));
-
+  connect (ui->plot->xAxis, SIGNAL(rangeChanged(QCPRange)), this, SLOT(slotRangeChanged(QCPRange)));
 
   /* Slot for printing coordinates */
   connect (ui->plot, SIGNAL (mouseMove (QMouseEvent*)), this, SLOT (onMouseMoveInPlot (QMouseEvent*)));
@@ -121,15 +121,19 @@ MainWindow::~MainWindow()
  */
 void MainWindow::createUI()
 {
+    ui->HeaterControlsBox->setVisible(false); // Hide Heater controls
     /* Check if there are any ports at all; if not, disable controls and return */
+    tmr = new QTimer(this);
+    ui->actionSave_Settings->setEnabled (false);
     if (QSerialPortInfo::availablePorts().size() == 0)
       {
         enable_com_controls (false);
         ui->statusBar->showMessage ("No ports detected.");
         ui->actionRecord_PNG->setEnabled (false);
+        connect(tmr, SIGNAL(timeout()), this, SLOT(on_pushButton_clicked()));
+        tmr->start(5000);
         return;
       }
-
     /* List all available serial ports and populate ports combo box */
     for (QSerialPortInfo port : QSerialPortInfo::availablePorts())
       {
@@ -137,6 +141,7 @@ void MainWindow::createUI()
         UpdatePortControls();
         enable_com_controls (true);
       }
+
 }
 void MainWindow::UpdatePortControls()
     {/* Populate baud rate combo box with standard rates */
@@ -227,7 +232,7 @@ void MainWindow::setupPlot()
     ui->plot->yAxis->setRange (ui->spinAxesMin->value(), ui->spinAxesMax->value());
     /* User can change Y axis tick step with a spin box */
     //ui->plot->yAxis->setAutoTickStep (false);
-    //ui->plot->yAxis->(ui->spinYStep->value());
+    ui->plot->yAxis->ticker()->setTickCount(ui->spinYStep->value());
 
     /* User interactions Drag and Zoom are allowed only on X axis, Y is fixed manually by UI control */
     ui->plot->setInteraction (QCP::iRangeDrag, true);
@@ -267,7 +272,18 @@ void MainWindow::enable_com_controls (bool enable)
   ui->actionPause_Plot->setEnabled (!enable);
   ui->actionDisconnect->setEnabled (!enable);
 
+  enable_heater_controls(!enable);
   loadSettings();
+}
+
+void MainWindow::enable_heater_controls (bool enable)
+    {
+    ui->pushButton_CANCEL->setEnabled (enable);
+    ui->pushButton_OK->setEnabled (enable);
+    ui->pushButton_UP->setEnabled (enable);
+    ui->pushButton_LEFT->setEnabled (enable);
+    ui->pushButton_RIGHT->setEnabled (enable);
+    ui->pushButton_DOWN->setEnabled (enable);
 }
 /** ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
@@ -328,6 +344,8 @@ void MainWindow::onPortClosed()
     disconnect (this, SIGNAL(newData(QStringList)), this, SLOT(onNewDataArrived(QStringList)));
     disconnect (this, SIGNAL(newData(QStringList)), this, SLOT(saveStream(QStringList)));
     ui->PortControlsBox->setVisible(true);
+    ui->HeaterControlsBox->setVisible(false);
+    ui->actionSave_Settings->setEnabled(false);
 }
 /** ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
@@ -361,6 +379,8 @@ void MainWindow::portOpenedSuccess()
     ui->actionRecord_stream->setEnabled(false);
 
     ui->PortControlsBox->setVisible(false); // Hide Port settings
+    ui->HeaterControlsBox->setVisible(true); // Show Heater Controls
+    ui->actionSave_Settings->setEnabled(true); // Enable Save Setings
 
     updateTimer.start (20);                                                                // Slot is refreshed 20 times per second
     connected = true;                                                                     // Set flags
@@ -383,9 +403,10 @@ void MainWindow::portOpenedFail()
  */
 void MainWindow::replot()
 {
- // ui->plot->xAxis->setRange (dataPointNumber - ui->spinPoints->value(), dataPointNumber);
+  //ui->plot->xAxis->setRange (dataPointNumber - ui->spinPoints->value(), dataPointNumber);
   //ui->plot->xAxis->setRange (ui->spinPoints->value(), dataPointNumber);
-  ui->plot->replot();
+
+   ui->plot->replot();
 }
 /** ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
@@ -457,6 +478,7 @@ void MainWindow::onNewDataArrived(QStringList newData)
               {
                 /* Add data to Graph 0 */
                 ui->plot->graph(channel)->addData (dataPointNumber, newData[channel].toDouble());
+                ui->lcdChannelTemp->display(newData[m_prefs.LCD_Channel]);
                 /* Increment data number and channel */
                 channel++;
               }
@@ -515,22 +537,49 @@ void MainWindow::readData()
         if(!data.isEmpty()) {                                                             // If the byte array is not empty
             char *temp = data.data();                                                     // Get a '\0'-terminated char* to the data
 
-            if (!filterDisplayedData){
-                ui->textEdit_UartWindow->append(data);
+            if (!filterDisplayedData){                                                     // Merge recieved data if it come in parts, print when first \r found
+                receivedDataRaw.append(data);
+                for(int i = 0; receivedDataRaw[i] != '\0'; i++) {
+                    if(receivedDataRaw[i] == '\r')
+                    {
+                        if (!receivedDataRaw.startsWith('\n') && !receivedDataRaw.startsWith('\r'))
+                        {
+                            ui->textEdit_UartWindow->append(receivedDataRaw.left(i));
+                            receivedDataRaw.remove(0,i);                                   // print in textEdit from 0 to i
+                        }
+                        else
+                         {
+                           receivedDataRaw.remove(0,1);                                    // if found more than 1 \n or \r in row - delete them
+                          // receivedDataRaw=receivedDataRaw.trimmed();
+                         }
+                        if (receivedDataRaw [i+1] == '\0') i=0;
+                    }
+
+                    if (i >= receivedDataRaw.size())
+                        {break;}
+                    }
             }
             for(int i = 0; temp[i] != '\0'; i++) {                                        // Iterate over the char*
                 switch(STATE) {                                                           // Switch the current state of the message
                 case WAIT_START:                                                          // If waiting for start [$], examine each char
                     if(temp[i] == START_MSG) {                                            // If the char is $, change STATE to IN_MESSAGE
-                        STATE = IN_MESSAGE;
                         receivedData.clear();                                             // Clear temporary QString that holds the message
+                        STATE = IN_MESSAGE;
                         break;                                                            // Break out of the switch
                     }
                     break;
                 case IN_MESSAGE:                                                          // If state is IN_MESSAGE
                     if(temp[i] == CLEAR_MSG) {                                                  // If recieve # symbol IN-MESSAGE
                         ui->actionClear->triggered(true);
+                        receivedData.clear();
                         STATE = WAIT_START;
+                    }
+                    if(temp[i] == DONG_MSG) {                                                  // If recieve @ symbol IN-MESSAGE
+                        QSound::play(":/serial_port_plotter/dong.wav");
+                        ui->statusBar->showMessage ("SOUND!");
+                        receivedData.clear();
+                        STATE = WAIT_START;
+
                     }
                     if(temp[i] == END_MSG) {                                              // If char examined is ;, switch state to END_MSG
                         STATE = WAIT_START;
@@ -683,7 +732,7 @@ void MainWindow::legend_double_click(QCPLegend *legend, QCPAbstractLegendItem *i
 void MainWindow::on_spinPoints_valueChanged (int arg1)
 {
     Q_UNUSED(arg1)
-   // ui->plot->xAxis->setRange (dataPointNumber - ui->spinPoints->value(), dataPointNumber);
+    // ui->plot->xAxis->setRange (dataPointNumber - ui->spinPoints->value(), dataPointNumber);
     ui->plot->xAxis->setRange (ui->spinPoints->value(), 0); // TODO Поправить обнуление позиции если график сдвигался мышью
 
     // ui->plot->axisRect()->setRangeDrag;
@@ -946,7 +995,7 @@ void MainWindow::on_pushButton_SendToCom_clicked()  // Send data to com
                 ui->statusBar->showMessage ("Nothing to send");
                 return;
             }
-            dataBuf = data.toUtf8();
+            dataBuf = data.append("\r\n").toUtf8();
             if(serialPort!=nullptr && connected)
             {
                 serialPort->write(dataBuf);
@@ -958,6 +1007,55 @@ void MainWindow::on_pushButton_SendToCom_clicked()  // Send data to com
         else {
             ui->statusBar->showMessage ("Cant Send, Port not open");
         }
+}
+
+void MainWindow::on_pushButton_OK_clicked()
+{
+        QString data = ui->textSend_UartWindow->toPlainText();
+        ui->textSend_UartWindow->clear();
+        ui->textSend_UartWindow->insertPlainText("S");
+        ui->pushButton_SendToCom->click();
+        ui->textSend_UartWindow->insertPlainText(data);
+}
+void MainWindow::on_pushButton_UP_clicked()
+{
+        QString data = ui->textSend_UartWindow->toPlainText();
+        ui->textSend_UartWindow->clear();
+        ui->textSend_UartWindow->insertPlainText("U");
+        ui->pushButton_SendToCom->click();
+        ui->textSend_UartWindow->insertPlainText(data);
+}
+void MainWindow::on_pushButton_DOWN_clicked()
+{
+        QString data = ui->textSend_UartWindow->toPlainText();
+        ui->textSend_UartWindow->clear();
+        ui->textSend_UartWindow->insertPlainText("D");
+        ui->pushButton_SendToCom->click();
+        ui->textSend_UartWindow->insertPlainText(data);
+}
+void MainWindow::on_pushButton_LEFT_clicked()
+{
+        QString data = ui->textSend_UartWindow->toPlainText();
+        ui->textSend_UartWindow->clear();
+        ui->textSend_UartWindow->insertPlainText("L");
+        ui->pushButton_SendToCom->click();
+        ui->textSend_UartWindow->insertPlainText(data);
+}
+void MainWindow::on_pushButton_RIGHT_clicked()
+{
+        QString data = ui->textSend_UartWindow->toPlainText();
+        ui->textSend_UartWindow->clear();
+        ui->textSend_UartWindow->insertPlainText("R");
+        ui->pushButton_SendToCom->click();
+        ui->textSend_UartWindow->insertPlainText(data);
+}
+void MainWindow::on_pushButton_CANCEL_clicked()
+{
+        QString data = ui->textSend_UartWindow->toPlainText();
+        ui->textSend_UartWindow->clear();
+        ui->textSend_UartWindow->insertPlainText("E");
+        ui->pushButton_SendToCom->click();
+        ui->textSend_UartWindow->insertPlainText(data);
 }
 
 
@@ -1005,6 +1103,8 @@ void MainWindow::on_pushButton_clicked()
         {
             UpdatePortControls();
             enable_com_controls (true);
+            disconnect(tmr, SIGNAL(timeout()), this, SLOT(on_pushButton_clicked()));
+            tmr->stop();
         }
     }
 }
@@ -1029,7 +1129,7 @@ void MainWindow::on_actionLoad_Settings_triggered()
         {
         ui->pushButton_TextEditHide-> click();
         }
-    if (ui->pushButton_ShowallData->isChecked() == m_prefs.ShowallData)
+    if (ui->pushButton_ShowallData->isChecked() != m_prefs.ShowallData)
         {
         ui->pushButton_ShowallData-> click();
         }
@@ -1037,6 +1137,7 @@ void MainWindow::on_actionLoad_Settings_triggered()
         {
         ui->actionRecord_stream-> trigger();
         }
+    ui->lcdChannelTemp->setVisible(m_prefs.ChannelOnLCDVisible);
     ui->statusBar->showMessage ("Settings Loaded");
 
 }
@@ -1060,8 +1161,11 @@ void MainWindow::loadSettings()
   m_prefs.TextEditHide = settings.value("TextEditHide", true).toBool();
   m_prefs.ShowallData = settings.value("ShowallData", true).toBool();
   m_prefs.Record_stream = settings.value("Record_stream", true).toBool();
+  m_prefs.LCD_Channel = settings.value("ChannelOnLCD", 2).toInt();
+  m_prefs.ChannelOnLCDVisible = settings.value("ChannelOnLCDVisible", true).toBool();
 
   m_prefs.channelnames.clear();
+
   int size = settings.beginReadArray("channelnames");   // Read channelNames in cycle
   for (int i = 0; i < size; ++i) {
       settings.setArrayIndex(i);
@@ -1102,9 +1206,13 @@ void MainWindow::saveSettings()
     settings.setValue("TextEditHide", ui->pushButton_TextEditHide->isChecked());
     settings.setValue("ShowallData", ui->pushButton_ShowallData->isChecked());
     settings.setValue("Record_stream", ui->actionRecord_stream->isChecked());
+    settings.setValue("ChannelOnLCD", m_prefs.LCD_Channel);
+    settings.setValue("ChannelOnLCDVisible", m_prefs.ChannelOnLCDVisible);
 
     settings.beginWriteArray("channelnames");
-    for (int i = 0; i < ui->plot->graphCount(); ++i) {
+    int max_size = ui->plot->graph(0) ? m_prefs.channelnames.size() : ui->plot->graphCount();
+
+    for (int i = 0; i < max_size; ++i) {
         settings.setArrayIndex(i);
         settings.setValue("channelName", ui->plot->graph(i)->name());
         settings.setValue("channelVisibie", ui->plot->graph(i)->visible());

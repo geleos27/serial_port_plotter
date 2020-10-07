@@ -1,0 +1,15 @@
+## TODO
++++ Save Plottable names + Shown\Hidden
++++ Add Buttons for fast command sending(Start, Stop, PAUSE, Change profile number); Add Show\Hide Button
+- Custom names on extra buttons + custom command defined in INI
+- custom field for setup fixed temperature. disable top heater. (custom Button + Field) (TOGETHER WITH SKETCH)
+- Save & Load profile files; (? needed??)
+- Draw profile line on Plot + Acceptable deviation
++++ Sound signal when recieveng "$@;" command
+- LARGE numbers of Temperatures Huge for PCB channel. + Time counter. - Custom Axis Tag https://www.qcustomplot.com/index.php/tutorials/specialcases/axistags
+- Fix plot moved to 0 when changing scale https://www.youtube.com/watch?v=5-QcZbKl7JE
+- Current Status (Idle \ Profile running \ Fixed temp \ HOLD \ Manual HOLD \ Error)
+
+FIXED:
+-Y-Tick count loads propperly.
+- \r\n during send and recieve commands over port

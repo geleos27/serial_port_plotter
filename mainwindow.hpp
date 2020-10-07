@@ -34,10 +34,13 @@
 #include "qcustomplot/qcustomplot.h"
 #include <QSettings>
 #include <QEvent>
+#include <QSound>
+#include <QTimer>
 
 #define START_MSG       '$'
 #define CLEAR_MSG       '#'
 #define END_MSG         ';'
+#define DONG_MSG        '@'
 
 #define WAIT_START      1
 #define IN_MESSAGE      2
@@ -102,10 +105,18 @@ private slots:
 
     void on_pushButton_ResetVisible_clicked();
 
+    void on_pushButton_OK_clicked();
+    void on_pushButton_UP_clicked();
+    void on_pushButton_DOWN_clicked();
+    void on_pushButton_LEFT_clicked();
+    void on_pushButton_RIGHT_clicked();
+    void on_pushButton_CANCEL_clicked();
+
     void on_listWidget_Channels_itemDoubleClicked(QListWidgetItem *item);
 
     void on_pushButton_clicked();
     void UpdatePortControls();
+
 
 
 signals:
@@ -143,6 +154,7 @@ private:
     void openCsvFile(void);
     void closeCsvFile(void);
 
+    QTimer *tmr; // timer for update COM-Ports.
 
     /* Preferences  TODO Fix number of saved prefs*/
 
@@ -171,29 +183,31 @@ private:
             bool TextEditHide;
             bool ShowallData;
             bool Record_stream;
+            int LCD_Channel;
+            bool ChannelOnLCDVisible;
             QList<LegendChannelNames>channelnames;                                             // ChannelNames Structure
             QList<ButtonNames>buttonnames;                                                     // ButtonNames Structure
 
         };
         SPreferences m_prefs;                                                               // preferences stucture
 
-
-
     QTimer updateTimer;                                                                   // Timer used for replotting the plot
     QTime timeOfFirstData;                                                                // Record the time of the first data point
     double timeBetweenSamples;                                                            // Store time between samples
     QSerialPort *serialPort;                                                              // Serial port; runs in this thread
     QString receivedData;                                                                 // Used for reading from the port
+    QString receivedDataRaw;
     int STATE;                                                                            // State of recieiving message from port
     int NUMBER_OF_POINTS;                                                                 // Number of points plotted
     HelpWindow *helpWindow;
 
     void createUI();                                                                      // Populate the controls
     void enable_com_controls (bool enable);                                               // Enable/disable controls
+    void enable_heater_controls(bool enable);
     void setupPlot();                                                                     // Setup the QCustomPlot
                                                                                           // Open the inside serial port with these parameters
     void openPort(QSerialPortInfo portInfo, int baudRate, QSerialPort::DataBits dataBits, QSerialPort::Parity parity, QSerialPort::StopBits stopBits);
-    void loadSettings();                                                                  // load settings to populate preferences fro; config file
+    void loadSettings();                                                                  // load settings to populate preferences from config file
     void saveSettings();                                                                  // save preferences in config file
 
 };

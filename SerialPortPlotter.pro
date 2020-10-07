@@ -7,6 +7,7 @@
 QT       += core gui
 QT       += serialport
 QT       += core
+QT       += multimedia
 CONFIG += c++11
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets printsupport
@@ -39,3 +40,6 @@ RC_FILE = res/serial_port_plotter.rc
 #win32:QMAKE_EXTRA_TARGETS += mkver_rc
 #win32:PRE_TARGETDEPS += serial_port_plotter_res.o
 #win32:LIBS += serial_port_plotter_res.o
+
+DISTFILES += \
+    TODO
