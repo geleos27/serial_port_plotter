@@ -2,7 +2,7 @@
 
 This is a Windows application that displays real time data from serial port. The application is 32-bit and built with Qt and QCustomPlot library.
 
-![DOWNLOAD for Win x64  (7-8-10)](SPP_Updated_2020-07-08.zip)
+[DOWNLOAD for Win x64  (7-8-10)](SPP_Updated_2020-07-08.zip)
 
 ## Features
 
