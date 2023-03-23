@@ -39,7 +39,7 @@ To enable the file saving, click on the document button before starting the plot
 
 Double click on a channel in the Graph Control panel to hide/show a specific channel.
 
-![File Save Button](res/screen_1.png)
+![File Save Button](res/screen_2.png)
 
 ## Send data over the serial port
 
@@ -69,6 +69,13 @@ Source and .pro file of the Qt Project are available. A standalone .exe is inclu
 
 All notable changes to this project will be documented below this line.
 This project adheres to [Semantic Versioning](http://semver.org/).
+
+
+## [Thermoplotter 0.56b] - 2023-03-20
+ 
+### Added
+- Lots of bugfixes and improvements. 
+- Able to save\load profiles from file on pc.
 
 
 ## [1.3.0.A] - 2020-06-15
