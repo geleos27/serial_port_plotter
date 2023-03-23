@@ -25,7 +25,7 @@ This is a Windows application that displays real time data from serial port. The
 
 ## Screenshot
 
-![Serial Port Plotter screenshot](res/screen_0.PNG)
+![Serial Port Plotter screenshot](res/screen_2.PNG)
 
 ## How to use the application
 
@@ -39,7 +39,7 @@ To enable the file saving, click on the document button before starting the plot
 
 Double click on a channel in the Graph Control panel to hide/show a specific channel.
 
-![File Save Button](res/screen_2.png)
+![File Save Button](res/screen_1.png)
 
 ## Send data over the serial port
 
