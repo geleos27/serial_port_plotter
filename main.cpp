@@ -26,28 +26,28 @@
 
 #include "mainwindow.hpp"
 #include <QApplication>
+// #include <iostream>
 
-int main(int argc, char *argv[])
-{
-    QApplication a(argc, argv);
+int main(int argc, char *argv[]) {
+  QApplication a(argc, argv);
 
-    a.setOrganizationName("SerialPortPlotter");         // give the folder name to store settings in local home
-    a.setApplicationName("SerialPortPlotter_Amperka");          // give file config name (.conf)
+  a.setOrganizationName(
+      "ThermoPlotter"); // give the folder name to store settings in local home
+  a.setApplicationName("ThermoPlotter"); // give file config name (.conf)
 
-    /* Apply style sheet */
-    QFile file(":/serial_port_plotter/styles/style.qss");
-    if(file.open(QIODevice::ReadOnly | QIODevice::Text))
-      {
-        a.setStyleSheet(file.readAll());
-        file.close();
-      }
+  /* Apply style sheet */
+  QFile file(":/serial_port_plotter/styles/style.qss");
+  if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+    a.setStyleSheet(file.readAll());
+    file.close();
+  }
 
-    /* Get the icon for the window corner */
-    MainWindow w;
-    QIcon appIcon(":/serial_port_plotter/icons/serial_port_icon.icns");
-    w.setWindowIcon(appIcon);
-    w.setWindowTitle("Serial Port Plotter v1.3.0 Amperka Beta v0.31");
-    w.show();
+  /* Get the icon for the window corner */
+  MainWindow w;
+  QIcon appIcon(":/serial_port_plotter/icons/serial_port_icon.icns");
+  w.setWindowIcon(appIcon);
+  w.setWindowTitle("ThermoPlotter v0.55b");
+  w.show();
 
-    return a.exec();
+  return a.exec();
 }

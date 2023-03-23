@@ -27,190 +27,266 @@
 #ifndef MAINWINDOW_HPP
 #define MAINWINDOW_HPP
 
-#include <QMainWindow>
-#include <QtSerialPort/QtSerialPort>
-#include <QSerialPortInfo>
+#include "dialog.hpp"
 #include "helpwindow.hpp"
 #include "qcustomplot/qcustomplot.h"
-#include <QSettings>
+#include <QCloseEvent>
 #include <QEvent>
+#include <QLineEdit>
+#include <QMainWindow>
+#include <QSerialPortInfo>
+#include <QSettings>
 #include <QSound>
 #include <QTimer>
+#include <QtSerialPort/QtSerialPort>
+#include <QMap>
+#include <QStringList>
 
-#define START_MSG       '$'
-#define CLEAR_MSG       '#'
-#define END_MSG         ';'
-#define DONG_MSG        '@'
+#define START_MSG '$'
+#define CLEAR_MSG '#'
+#define END_MSG ';'
+#define DONG_MSG '@'
+#define COMMAND_MSG '!'
 
-#define WAIT_START      1
-#define IN_MESSAGE      2
-#define UNDEFINED       3
+#define WAIT_START 1
+#define IN_MESSAGE 2
+#define IN_COMMAND 3
+#define UNDEFINED 4
+#define WAIT_COMMAND 5
+#define IN_STATUS 6
 
-#define CUSTOM_LINE_COLORS   14
+#define CUSTOM_LINE_COLORS 14
 #define GCP_CUSTOM_LINE_COLORS 4
 
 namespace Ui {
-    class MainWindow;
+class MainWindow;
 }
 
-class MainWindow : public QMainWindow
-{
-    Q_OBJECT
+// class Dialog;
+
+class MainWindow : public QMainWindow {
+  Q_OBJECT
 
 public:
-    explicit MainWindow(QWidget *parent = nullptr);
-    void closeEvent(QCloseEvent *event);                                                  // close event to save settings TODO, CHANGE TO BUTTON
-    ~MainWindow();
+  explicit MainWindow(QWidget *parent = nullptr);
+  void closeEvent(QCloseEvent *event); // close event to save settings TODO,
+                                       // CHANGE TO BUTTON
+  ~MainWindow();
+  // QString uartex;
+
+  struct ProfileData {                                  // Structure for storing current profile data
+      QMap<QString, QString> values;
+      void addValue(const QString &key, const QString &data) {
+          values[key] = data;
+      }
+  };
+  ProfileData profiledata;
 
 
 private slots:
-    void on_comboPort_currentIndexChanged(const QString &arg1);                           // Slot displays message on status bar
-    void portOpenedSuccess();                                                             // Called when port opens OK
-    void portOpenedFail();                                                                // Called when port fails to open
-    void onPortClosed();                                                                  // Called when closing the port
-    void replot();                                                                        // Slot for repainting the plot
-    void onNewDataArrived(QStringList newData);                                           // Slot for new data from serial port
-    void saveStream(QStringList newData);                                                 // Save the received data to the opened file
-    void on_spinAxesMin_valueChanged(int arg1);                                           // Changing lower limit for the plot
-    void on_spinAxesMax_valueChanged(int arg1);                                           // Changing upper limit for the plot
-    void readData();                                                                      // Slot for inside serial port
- //   void writeData(const QByteArray &data);                                               // Slot for inside serial port
-    //void on_comboAxes_currentIndexChanged(int index);                                   // Display number of axes and colors in status bar
-    void on_spinYStep_valueChanged(int arg1);                                             // Spin box for changing Y axis tick step
-    void on_actionRecord_PNG_triggered();                                              // Button for saving JPG
-    void onMouseMoveInPlot (QMouseEvent *event);                                          // Displays coordinates of mouse pointer when clicked in plot in status bar
-    void on_spinPoints_valueChanged (int arg1);                                           // Spin box controls how many data points are collected and displayed
-    void on_mouse_wheel_in_plot (QWheelEvent *event);                                     // Makes wheel mouse works while plotting
+  void on_comboPort_currentIndexChanged(
+      const QString &arg1); // Slot displays message on status bar
+  void portOpenedSuccess(); // Called when port opens OK
+  void portOpenedFail();    // Called when port fails to open
+  void onPortClosed();      // Called when closing the port
+  void replot();            // Slot for repainting the plot
+  void
+  onNewDataArrived(QStringList newData); // Slot for new data from serial port
+  void
+  saveStream(QStringList newData); // Save the received data to the opened file
+  void
+  on_spinAxesMin_valueChanged(int arg1); // Changing lower limit for the plot
+  void
+  on_spinAxesMax_valueChanged(int arg1); // Changing upper limit for the plot
+  void readData();                       // Slot for inside serial port
+  void
+  on_spinYStep_valueChanged(int arg1); // Spin box for changing Y axis tick step
+  void on_actionRecord_PNG_triggered(); // Button for saving JPG
+  void onMouseMoveInPlot(
+      QMouseEvent *event); // Displays coordinates of mouse pointer when clicked
+                           // in plot in status bar
+  void
+  on_spinPoints_valueChanged(int arg1); // Spin box controls how many data
+                                        // points are collected and displayed
+  void on_mouse_wheel_in_plot(
+      QWheelEvent *event); // Makes wheel mouse works while plotting
 
-    /* Used when a channel is selected (plot or legend) */
-    void channel_selection (void);
-    void legend_double_click (QCPLegend *legend, QCPAbstractLegendItem *item, QMouseEvent *event);
+  /* Used when a channel is selected (plot or legend) */
+  void channel_selection(void);
+  void legend_double_click(QCPLegend *legend, QCPAbstractLegendItem *item,
+                           QMouseEvent *event);
 
-    void on_actionConnect_triggered();
-    void on_actionDisconnect_triggered();
-    void on_actionHow_to_use_triggered();
-    void on_actionPause_Plot_triggered();
-    void on_actionClear_triggered();
-    void on_actionRecord_stream_triggered();
-    void on_actionLoad_Settings_triggered();
-    void on_actionSave_Settings_triggered();
+  void on_actionConnect_triggered();
+  void on_actionDisconnect_triggered();
+  void on_actionHow_to_use_triggered();
+  void on_actionPause_Plot_triggered();
+  void on_actionClear_triggered();
+  void on_actionRecord_stream_triggered();
+  void on_actionLoad_Settings_triggered();
+  void on_actionSave_Settings_triggered();
 
-    void on_pushButton_TextEditHide_clicked();
+  void on_pushButton_TextEditHide_clicked();
 
-    void on_pushButton_ShowallData_clicked();
+  void on_pushButton_ShowallData_clicked();
 
-    void on_pushButton_SendToCom_clicked(); // to send data over COM
+  void on_pushButton_SendToCom_clicked(); // to send data over COM
 
-    void on_pushButton_AutoScale_clicked();
+  void on_pushButton_AutoScale_clicked();
 
-    void on_pushButton_ResetVisible_clicked();
+  void on_pushButton_ResetVisible_clicked();
 
-    void on_pushButton_OK_clicked();
-    void on_pushButton_UP_clicked();
-    void on_pushButton_DOWN_clicked();
-    void on_pushButton_LEFT_clicked();
-    void on_pushButton_RIGHT_clicked();
-    void on_pushButton_CANCEL_clicked();
+  void on_pushButton_OK_clicked();
+  void on_pushButton_UP_clicked();
+  void on_pushButton_DOWN_clicked();
+  void on_pushButton_LEFT_clicked();
+  void on_pushButton_RIGHT_clicked();
+  void on_pushButton_CANCEL_clicked();
 
-    void on_listWidget_Channels_itemDoubleClicked(QListWidgetItem *item);
+  void on_listWidget_Channels_itemDoubleClicked(QListWidgetItem *item);
 
-    void on_pushButton_clicked();
-    void UpdatePortControls();
+  void on_pushButton_clicked();
+  void UpdatePortControls();
+
+  // void on_comboMod(const QString &arg1);
+
+  void on_pushButton_2_clicked();
+
+  // void on_pushButton_profil_clicked();
+
+  void profilread();
+
+  void on_SimpleExpert_clicked(); // Simple \ Expert viev
+
+  void send_data_to_com(QString newdata);
+
+  void unblock(QString epromdata);
+
+  void unblock2();
+
+  void on_HotStart_clicked();
+
+  void on_manulabutton_clicked();
+
+  void plot_Profile(QString timeStamps, QString temperatures, int name);
+  void plot_All_Profile(); // Print 3 graphs of loaded thermalprofile
+  void clear_plottables_data();
 
 
 
 signals:
-    void portOpenFail();                                                                  // Emitted when cannot open port
-    void portOpenOK();                                                                    // Emitted when port is open
-    void portClosed();                                                                    // Emitted when port is closed
-    void newData(QStringList data);                                                       // Emitted when new data has arrived
+  void portOpenFail();            // Emitted when cannot open port
+  void portOpenOK();              // Emitted when port is open
+  void portClosed();              // Emitted when port is closed
+  void newData(QStringList data); // Emitted when new data has arrived
+  void sendData(QString str);
 
 private:
-    Ui::MainWindow *ui;
+  Ui::MainWindow *ui;
+  // Ui::Dialog ui;
 
-    /* Line colors */
-    QColor line_colors[CUSTOM_LINE_COLORS];
-    QColor gui_colors[GCP_CUSTOM_LINE_COLORS];
+  /* Line colors */
+  QColor line_colors[CUSTOM_LINE_COLORS];
+  QColor gui_colors[GCP_CUSTOM_LINE_COLORS];
 
-    /* Main info */
-    bool connected;                                                                       // Status connection variable
-    bool plotting;                                                                        // Status plotting variable
-    int dataPointNumber;                                                                  // Keep track of data points
-    /* Channels of data (number of graphs) */
-    int channels;
+  /* Main info */
+  bool connected;      // Status connection variable
+  bool plotting;       // Status plotting variable
+  int dataPointNumber; // Keep track of data points
+  /* Channels of data (number of graphs) */
+  int channels;
 
-    /* Data format */
-    int data_format;   
+  bool alflag;
 
-    /* Textbox Related */
-    bool filterDisplayedData = false;
+  /* Data format */
+  int data_format;
 
-    /* Listview Related */
-    QStringListModel *channelListModel;
-    QStringList     channelStrList;
+  /* Textbox Related */
+  bool filterDisplayedData = false;
 
-    //-- CSV file to save data
-    QFile* m_csvFile = nullptr;
-    void openCsvFile(void);
-    void closeCsvFile(void);
+  /* Listview Related */
+  QStringListModel *channelListModel;
+  QStringList channelStrList;
 
-    QTimer *tmr; // timer for update COM-Ports.
+  //-- CSV file to save data
+  QFile *m_csvFile = nullptr;
+  void openCsvFile(void);
+  void closeCsvFile(void);
 
-    /* Preferences  TODO Fix number of saved prefs*/
+  QTimer *tmr; // timer for update COM-Ports.
 
-    struct LegendChannelNames {
-        QString channelName;
-        bool channelVisibie;
-    };
+  /* Preferences  TODO Fix number of saved prefs*/
 
-    struct ButtonNames {
-        QString buttonName;
-        QString buttonCommand;
-        bool buttonVisible;
-    };
+  struct LegendChannelNames {
+    QString channelName;
+    bool channelVisibie;
+  };
 
-        struct SPreferences
-        {
-            int port;                                                                       // last port used
-            int baud;                                                                       // last baudrate item used
-            int data;                                                                       // last data length used
-            int parity;                                                                     // last parity used
-            int stop;                                                                       // last stop bit number
-            int spinPoints;
-            int spinYStep;                                                                  // last value used
-            int spinAxesMin;                                                                // last value used
-            int spinAxesMax;                                                                // last value used
-            bool TextEditHide;
-            bool ShowallData;
-            bool Record_stream;
-            int LCD_Channel;
-            bool ChannelOnLCDVisible;
-            QList<LegendChannelNames>channelnames;                                             // ChannelNames Structure
-            QList<ButtonNames>buttonnames;                                                     // ButtonNames Structure
+  struct ButtonNames {
+    QString buttonName;
+    QString buttonCommand;
+    bool buttonVisible;
+  };
 
-        };
-        SPreferences m_prefs;                                                               // preferences stucture
+  struct SPreferences {
+    int port;   // last port used
+    int baud;   // last baudrate item used
+    int data;   // last data length used
+    int parity; // last parity used
+    int stop;   // last stop bit number
+    int spinPoints;
+    int spinYStep;   // last value used
+    int spinAxesMin; // last value used
+    int spinAxesMax; // last value used
+    bool TextEditHide;
+    bool SimpleExpert;
+    bool ShowallData;
+    bool Record_stream;
+    int LCD_Channel;
+    bool ChannelOnLCDVisible;
+    QList<LegendChannelNames> channelnames; // ChannelNames Structure
+    QList<ButtonNames> buttonnames;         // ButtonNames Structure
+  };
+  SPreferences m_prefs; // preferences stucture
 
-    QTimer updateTimer;                                                                   // Timer used for replotting the plot
-    QTime timeOfFirstData;                                                                // Record the time of the first data point
-    double timeBetweenSamples;                                                            // Store time between samples
-    QSerialPort *serialPort;                                                              // Serial port; runs in this thread
-    QString receivedData;                                                                 // Used for reading from the port
-    QString receivedDataRaw;
-    int STATE;                                                                            // State of recieiving message from port
-    int NUMBER_OF_POINTS;                                                                 // Number of points plotted
-    HelpWindow *helpWindow;
+  //int spinPoints1;
+  //int spinYStep1;
+  //int spinAxesMin1;
+  //int spinAxesMax1;
+  //bool spin; // in header
+  //int delta;
+  //int clkb = 1;
+  //int frstch = 0;
 
-    void createUI();                                                                      // Populate the controls
-    void enable_com_controls (bool enable);                                               // Enable/disable controls
-    void enable_heater_controls(bool enable);
-    void setupPlot();                                                                     // Setup the QCustomPlot
-                                                                                          // Open the inside serial port with these parameters
-    void openPort(QSerialPortInfo portInfo, int baudRate, QSerialPort::DataBits dataBits, QSerialPort::Parity parity, QSerialPort::StopBits stopBits);
-    void loadSettings();                                                                  // load settings to populate preferences from config file
-    void saveSettings();                                                                  // save preferences in config file
+  QTimer updateTimer;        // Timer used for replotting the plot
+  QTime timeOfFirstData;     // Record the time of the first data point
+  double timeBetweenSamples; // Store time between samples
+  QSerialPort *serialPort;   // Serial port; runs in this thread
+  QString receivedData;      // Used for reading from the port
+  QString receivedDataRaw;
+  QString receivedWord;
+  QString receivedProfile;
+  QString statusData;
 
+  // void setSettingsValue(QString line, QString value);
+
+  int STATE; // State of recieiving message from port
+  int STATEAL;
+
+  int NUMBER_OF_POINTS; // Number of points plotted
+  HelpWindow *helpWindow;
+  Dialog *dialog;
+
+  void createUI();                       // Populate the controls
+  void enable_com_controls(bool enable); // Enable/disable controls
+  void enable_heater_controls(bool enable);
+  void enable_advanced_controls(bool enable);
+  void setupPlot(); // Setup the QCustomPlot
+                    // Open the inside serial port with these parameters
+  void openPort(QSerialPortInfo portInfo, int baudRate, QSerialPort::DataBits,
+                QSerialPort::Parity, QSerialPort::StopBits);
+  void loadSettings(); // load settings to populate preferences from config file
+  void saveSettings(); // save preferences in config file
+                       // void closeEvent(QCloseEvent *bar);
 };
 
-
-#endif                                                                                    // MAINWINDOW_HPP
+#endif // MAINWINDOW_HPP

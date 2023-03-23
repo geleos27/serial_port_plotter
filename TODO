@@ -9,6 +9,12 @@
 - LARGE numbers of Temperatures Huge for PCB channel. + Time counter. - Custom Axis Tag https://www.qcustomplot.com/index.php/tutorials/specialcases/axistags
 - Fix plot moved to 0 when changing scale https://www.youtube.com/watch?v=5-QcZbKl7JE
 - Current Status (Idle \ Profile running \ Fixed temp \ HOLD \ Manual HOLD \ Error)
+- Add checkbox for Autoconnect to Port on start + checking that station connected
+- auto Retrieve current profile settings on Settins window open
+
+- Вернуть в интерфейс кнопки управления графиком, Убрать автопрокрутку
+- Вернуть тёмную тему
+
 
 FIXED:
 -Y-Tick count loads propperly.

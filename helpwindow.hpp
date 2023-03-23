@@ -30,19 +30,18 @@
 #include <QDialog>
 
 namespace Ui {
-    class HelpWindow;
+class HelpWindow;
 }
 
-class HelpWindow : public QDialog
-{
-    Q_OBJECT
+class HelpWindow : public QDialog {
+  Q_OBJECT
 
 public:
-    explicit HelpWindow(QWidget *parent = 0);
-    ~HelpWindow();
+  explicit HelpWindow(QWidget *parent = nullptr);
+  ~HelpWindow();
 
 private:
-    Ui::HelpWindow *ui;
+  Ui::HelpWindow *ui;
 };
 
 #endif // HELPWINDOW_HPP

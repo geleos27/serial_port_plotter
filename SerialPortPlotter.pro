@@ -18,15 +18,22 @@ TEMPLATE = app
 SOURCES += main.cpp\
         mainwindow.cpp \
         qcustomplot/qcustomplot.cpp \
-        helpwindow.cpp
+        helpwindow.cpp \
+    dialog.cpp
 
 HEADERS  += mainwindow.hpp \
-        qcustomplot/qcustomplot.h \
-        helpwindow.hpp
+        dialog.hpp \
+        helpwindow.hpp \
+        qcustomplot/qcustomplot.h
 
 
 FORMS    += mainwindow.ui \
-    helpwindow.ui
+    helpwindow.ui \
+    dialog.ui \
+
+    secondmain.ui \
+
+    dialog.ui
 
 RESOURCES += \
     res/serial_port_plotter.qrc \
