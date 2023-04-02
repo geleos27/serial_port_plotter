@@ -23,9 +23,13 @@ This is a Windows application that displays real time data from serial port. The
 - Can actually SAVE and load settings
 - Plays sound if recieved "$@;" command over com
 
-## Screenshot
+## Interface Screenshot
 
-![Serial Port Plotter screenshot](res/screen_2.png)
+![Serial Port Plotter screenshot](res/interface.png)
+
+## Settings Screenshot
+
+![Serial Port Plotter screenshot](res/settings.png)
 
 ## How to use the application
 
