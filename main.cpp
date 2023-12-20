@@ -46,7 +46,7 @@ int main(int argc, char *argv[]) {
   MainWindow w;
   QIcon appIcon(":/serial_port_plotter/icons/serial_port_icon.icns");
   w.setWindowIcon(appIcon);
-  w.setWindowTitle("ThermoPlotter v0.55b");
+  w.setWindowTitle("ThermoPlotter v0.59 alpha");
   w.show();
 
   return a.exec();

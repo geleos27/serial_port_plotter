@@ -1119,6 +1119,19 @@
     </property>
    </widget>
   </widget>
+  <widget class="QPushButton" name="EDIT_MODE">
+   <property name="geometry">
+    <rect>
+     <x>20</x>
+     <y>680</y>
+     <width>88</width>
+     <height>34</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>EDIT MODE</string>
+   </property>
+  </widget>
  </widget>
  <resources/>
  <connections>

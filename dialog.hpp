@@ -30,6 +30,7 @@ signals:
   void buttonPressed2();
   void buttonPressed3(QString data);
   void buttonPressed4();
+  void toggle_EDIT_MODE(bool mode);
 
   void SendParameter(QString data);
 
@@ -56,6 +57,8 @@ private slots:
   void on_readfile_clicked();
 
   void on_savefile_clicked();
+
+  void on_EDIT_MODE_clicked();
 
   /*
    *
@@ -162,6 +165,8 @@ private:
   bool stopflag = 0;
 
   bool readflag = 0;
+
+  bool profileEditEnable = false;
 
   void closeEvent(QCloseEvent *bar);
 

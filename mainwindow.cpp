@@ -31,7 +31,6 @@
 
 
 #include "dialog.hpp"
-#include "ui_dialog.h"
 #include "ui_mainwindow.h"
 #include <QDialog>
 #include <QMessageBox>
@@ -64,7 +63,7 @@ MainWindow::MainWindow(QWidget *parent)
           QColor("#75F759"), // Diff PCB
           QColor("#C74A20"), // Profile TOP
           QColor("#7F32C7"), // Profile BOT
-          QColor("#90C752"), // Profile PCB
+          QColor("#699a32"), // Profile PCB
           QColor("#689d6a"),
           QColor("#d65d0e"),
       },
@@ -88,7 +87,7 @@ MainWindow::MainWindow(QWidget *parent)
 
   dialog = new Dialog(this);
   dialog->setWindowTitle("Settings");
-  dialog->setModal(true);
+  dialog->setModal(false);
 
   /* Init UI and populate UI controls */
   createUI();
@@ -115,6 +114,9 @@ MainWindow::MainWindow(QWidget *parent)
           SLOT(legend_double_click(QCPLegend *, QCPAbstractLegendItem *,
                                    QMouseEvent *)));
 
+
+
+
   /* Connect update timer to replot slot */
   connect(&updateTimer, SIGNAL(timeout()), this, SLOT(replot()));
 
@@ -135,7 +137,18 @@ MainWindow::MainWindow(QWidget *parent)
           SLOT(unblock(QString)));
   connect(dialog, SIGNAL(buttonPressed4()), this, SLOT(unblock2()));
 
+  connect(dialog, SIGNAL(toggle_EDIT_MODE(bool)), this, SLOT(switch_EDIT_MODE(bool)));
+
+  /* Slots for editing graphs values*/
+ // connect(ui->plot->graph(10), SIGNAL(plottableClick(QCPAbstractPlottable*,int,QMouseEvent*)), this, SLOT(plottableClicked(QCPAbstractPlottable*,int,QMouseEvent)));
+  connect(ui->plot, SIGNAL(plottableDoubleClick(QCPAbstractPlottable *,int,QMouseEvent *)), this, SLOT(plottableDoubleClicked(QCPAbstractPlottable *,int,QMouseEvent *)));
+  connect(ui->plot, SIGNAL(mousePress(QMouseEvent*)), this, SLOT(handleMousePress(QMouseEvent*)));
+  connect(ui->plot, SIGNAL(mouseRelease(QMouseEvent*)), this, SLOT(handleMouseRelease(QMouseEvent*)));
+
+
   m_csvFile = nullptr;
+
+  QSound *dong = new QSound("qrc:/serial_port_plotter/dong.wav");
 }
 
 /** ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
@@ -158,7 +171,7 @@ MainWindow::~MainWindow() {
  */
 void MainWindow::createUI() {
 
-  ui->pushButton_CANCEL->setEnabled(false);
+ // ui->pushButton_CANCEL->setEnabled(false);
   ui->pushButton_2->setVisible(false);
   ui->ready->setVisible(false);
   ui->manulabutton->setVisible(false);
@@ -193,7 +206,7 @@ void MainWindow::createUI() {
     ui->statusBar->showMessage("No ports detected.");
     ui->actionRecord_PNG->setEnabled(false);
     connect(tmr, SIGNAL(timeout()), this, SLOT(on_pushButton_clicked()));
-    tmr->start(5000);
+    tmr->start(3000);
     return;
   }
   /* List all available serial ports and populate ports combo box */
@@ -248,6 +261,7 @@ void MainWindow::UpdatePortControls() { /* Populate baud rate combo box with
 
   // try to load settings, or populate with default value
   ui->actionLoad_Settings->trigger();
+
 }
 /** ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
@@ -319,8 +333,10 @@ void MainWindow::setupPlot() {
 
     /* User interactions Drag and Zoom are allowed only on X axis, Y is fixed manually by UI control */
     ui->plot->setInteraction (QCP::iRangeDrag, true);
-    //ui->plot->setInteraction (QCP::iRangeZoom, true);
-    ui->plot->setInteraction (QCP::iSelectPlottables, true);
+   // ui->plot->setInteraction (QCP::iMultiSelect , true);
+    ui->plot->setInteraction (QCP::iSelectPlottables, false);
+
+   // ui->plot->graph(3)->selectable(QCP::SelectionType(QCP::stSingleData));
     ui->plot->setInteraction (QCP::iSelectLegend, true);
     ui->plot->axisRect()->setRangeDrag (Qt::Horizontal);
     ui->plot->axisRect()->setRangeZoom (Qt::Horizontal);
@@ -590,6 +606,7 @@ void MainWindow::onNewDataArrived(QStringList newData) {
   if (plotting) {
     /* Get size of received list */
     data_members = newData.size();
+    if (data_members > 9) {data_members = 9;} // limit number of plotted channels to 9
 
     /* Parse data */
     for (i = 0; i < data_members; i++) {
@@ -628,14 +645,15 @@ void MainWindow::onNewDataArrived(QStringList newData) {
       /* [TODO] Method selection and plotting */
       /* X-Y */
       if (ui->plot->plottableCount() == data_members) { //если у нас графиков столько, сколько приходит данных то добавляем статичные графики
-          for (i = 10; i < 13; i++) {
+          for (i = 9; i < 12; i++) {
           ui->plot->addGraph();
+          ui->plot->graph()->setName(m_prefs.channelnames.value(i).channelName);
           }
       }
       /* Rolling (v1.0.0 compatible) */
       else {
         /* Add data to Graph 0 */
-        ui->plot->graph(channel)->addData (dataPointNumber, newData[channel].toDouble());
+        ui->plot->graph(channel)->addData (dataPointNumber, newData[channel].toDouble()); // add piont to correspoding channel
         ui->lcdChannelTemp->display(newData[5]);    //PCB
         ui->lcdChannelTemp_2->display(newData[4]);  // Bottom
         ui->lcdChannelTemp_3->display(newData[3]);  // Top
@@ -690,19 +708,19 @@ void MainWindow::readData() {
   if (serialPort->bytesAvailable()) {        // If any bytes are available
     QByteArray data = serialPort->readAll(); // Read all data in QByteArray
 
-    if (!data.isEmpty()) { // If the byte array is not empty
+    if (!data.isEmpty() && data.length()>4) { // If the byte array is not empty
       //  char *temp = data.data(); // Get a '\0'-terminated char* to the data
-      // unsigned char *temp = (unsigned char*)data.data();
+    //      unsigned char *temp = (unsigned char*)data.data();
 
-      unsigned char *temp = reinterpret_cast<unsigned char *>(data.data());
-      unsigned char *tempal = reinterpret_cast<unsigned char *>(data.data());
-      unsigned char *tempst = reinterpret_cast<unsigned char *>(data.data());
+        unsigned char *temp = reinterpret_cast<unsigned char *>(data.data());
+  //    unsigned char *tempal = reinterpret_cast<unsigned char *>(data.data());
+  //    unsigned char *tempst = reinterpret_cast<unsigned char *>(data.data());
 
       if (!filterDisplayedData) { // Merge recieved data if it come in parts,
                                   // print when first \r found
         receivedDataRaw.append(data);
         for (int i = 0; receivedDataRaw[i] != '\0'; i++) {
-          if (receivedDataRaw[i] == '\r') {
+          if (receivedDataRaw[i] == '\r') {  // clean
             if (!receivedDataRaw.startsWith('\n') &&
                 !receivedDataRaw.startsWith('\r')) {
               ui->textEdit_UartWindow->append(receivedDataRaw.left(i));
@@ -734,7 +752,7 @@ void MainWindow::readData() {
             STATE = IN_MESSAGE;
             break; // Break out of the switch
           }
-          if (tempal[i] ==
+          if (temp[i] ==
               COMMAND_MSG) { // If the char is !, change STATE to IN_COMMAND
             receivedData
                 .clear(); // Clear temporary QString that holds the message
@@ -742,7 +760,7 @@ void MainWindow::readData() {
             break; // Break out of the switch
           }
 
-          if (tempst[i] ==
+          if (temp[i] ==
               DONG_MSG) { // If the char is @, change STATE to IN_STATUS
             statusData.clear();
             receivedData
@@ -754,14 +772,17 @@ void MainWindow::readData() {
           break; // If waiting for start [$], examine each char
 
         case IN_MESSAGE:              // If state is IN_MESSAGE
+
           if (temp[i] == CLEAR_MSG) { // If recieve # symbol IN-MESSAGE
 
-              clear_plottables_data();
+            clear_plottables_graph();
             receivedData.clear();
             STATE = WAIT_START;
           }
           if (temp[i] == DONG_MSG) { //  @ symbol IN-MESSAGE
-            QSound::play(":/serial_port_plotter/dong.wav");
+
+           // dong->play();
+
             ui->statusBar->showMessage("SOUND!");
             receivedData.clear();
             STATE = WAIT_START;
@@ -777,6 +798,8 @@ void MainWindow::readData() {
             }
             emit newData(
                 incomingData); // Emit signal for data received with the list
+            receivedData.clear();
+            if ((PREV_STATE == IN_COMMAND || PREV_STATE == IN_STATUS)){STATE = PREV_STATE;}
             break;
           }
           if (isdigit(temp[i]) || isspace(temp[i]) || temp[i] == '-' ||
@@ -787,8 +810,13 @@ void MainWindow::readData() {
           }
           break;
 
-        case IN_COMMAND: // If state is IN_MESSAGE
-          if (tempal[i] ==
+        case IN_COMMAND: // If state is IN_COMMAND after recieve "!"
+            if (temp[i] ==
+              START_MSG) { // If char examined is $, - we have interrupt with temperatures data.
+            PREV_STATE = STATE;
+            STATE = IN_MESSAGE;
+            }
+            if (temp[i] ==
               END_MSG) { // If char examined is ;, switch state to END_MSG
             STATE = WAIT_START;
             if (receivedData.contains(':')) {
@@ -825,30 +853,45 @@ void MainWindow::readData() {
             }
 
             receivedData.clear();
+            PREV_STATE = WAIT_START;
             break;
           }
-          if (isalpha(tempal[i]) || isdigit(tempal[i]) || tempal[i] == ':' ||
-              tempal[i] == ',' || tempal[i] == '_' || tempal[i] == '-' ||
-              tempal[i] == '.' || isspace(tempal[i])) {
-            receivedData.append(tempal[i]);
+          if (isalpha(temp[i]) || isdigit(temp[i]) || temp[i] == ':' ||
+              temp[i] == ',' || temp[i] == '_' || temp[i] == '-' ||
+              temp[i] == '.' || isspace(temp[i])) {
+            receivedData.append(temp[i]);
           }
           break;
 
         case IN_STATUS:
-          if (tempst[i] == END_MSG) { //  switch state to END_MSG
+            if (temp[i] ==
+              START_MSG) { // If char examined is $, - we have interrupt with temperatures data.
+            PREV_STATE = STATE;
+            STATE = IN_MESSAGE;
+            }
+          if (temp[i] == END_MSG) { //  switch state to END_MSG
             STATE = WAIT_START;
 
             if (statusData == '0') {
               ui->ready->setVisible(false); // IDLE
+
             } else if (statusData == '1') {
               ui->ready->setVisible(true);
               ui->ready->setText("WARMUP...");
-              clear_plottables_data();
-              for (int j=0; j==9; j++){  // Change all plott to point
+              dataPointNumber = 0;   // Lock graph redraw
 
-                  ui->plot->graph(j)->setLineStyle(QCPGraph::lsNone);
+              for (int j = 0; j <= 8; j++) {   // Draw round point at Y Axis during Warmup
+
+                  ui->plot->graph(j)->setLineStyle(QCPGraph::lsNone);                   // Change 0-8 plot to fat point
+                  ui->plot->graph(j)->setPen(line_colors[j % CUSTOM_LINE_COLORS]);
+                  ui->plot->graph(j)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssDisc, 12));
+                  double lastValue = ui->plot->graph(j)->data()->at(1)->value;
+                  ui->plot->graph(j)->data()->clear();
+                  ui->plot->graph(j)->setData({0,2}, {lastValue});
+                 // ui->plot->graph(j)->setData(dataPointNumber, lastValue);
+
+
               }
-
 
             } else if (statusData == '2') {
               ui->ready->setVisible(true);
@@ -862,8 +905,9 @@ void MainWindow::readData() {
                   "QPushButton:enabled { background-color: rgb(50,150,250); }\n"
                   "QPushButton:enabled { color: rgb(0,0,0); }\n");
             //  plot_All_Profile(); // Вывести график термопрофиля
-              for (int j=0; j==9; j++){  // Change all plott to point
+              for (int j=0; j<=8; j++){  // Change all plott to point
                   ui->plot->graph(j)->setLineStyle(QCPGraph::lsLine);
+                  ui->plot->graph(j)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssNone , 1));
               }
 
             } else if (statusData == '3') {
@@ -872,22 +916,31 @@ void MainWindow::readData() {
 
             } else if (statusData == '4') {
               ui->ready->setVisible(true);
-              ui->ready->setText(" <MANUAL");
+              ui->ready->setText("MANUAL");
               ui->manualTemp->setVisible(true);
 
             } else if (statusData == '5') {
               ui->ready->setVisible(true);
               ui->ready->setText("FINISH !");
+              for (int j=0; j<=8; j++){  // Change all plott to point
+                  ui->plot->graph(j)->setLineStyle(QCPGraph::lsLine);
+                  ui->plot->graph(j)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssNone , 1));
+              }
 
             } else if (statusData == '6') {
               ui->ready->setVisible(false);
+
+    //        } else if (statusData == '7') {
+    //                    ui->error->setVisible(true);
             }
 
+
             statusData.clear();
+            PREV_STATE = WAIT_START;
           }
 
-          if (isdigit(tempst[i])) {
-            statusData.append(tempst[i]);
+          if (isdigit(temp[i])) {
+            statusData.append(temp[i]);
           }
           break;
 
@@ -940,18 +993,6 @@ void MainWindow::on_actionRecord_PNG_triggered() {
 }
 /** ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-/**
- * @brief Prints coordinates of mouse pointer in status bar on mouse release
- * @param event
- */
-void MainWindow::onMouseMoveInPlot(QMouseEvent *event) {
-  int xx = int(ui->plot->xAxis->pixelToCoord(event->x()));
-  int yy = int(ui->plot->yAxis->pixelToCoord(event->y()));
-  QString coordinates("X: %1 Y: %2");
-  coordinates = coordinates.arg(xx).arg(yy);
-  ui->statusBar->showMessage(coordinates);
-}
-/** ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 /**
  * @brief Send plot wheelmouse to spinbox
@@ -959,7 +1000,7 @@ void MainWindow::onMouseMoveInPlot(QMouseEvent *event) {
  */
 void MainWindow::on_mouse_wheel_in_plot (QWheelEvent *event)
 {
-  QWheelEvent inverted_event = QWheelEvent(event->posF(), event->globalPosF(),
+  QWheelEvent inverted_event = QWheelEvent(event->position(), event->globalPosition(),
                                            -event->pixelDelta(), -event->angleDelta(),
                                            0, Qt::Vertical, event->buttons(), event->modifiers());
   QApplication::sendEvent (ui->spinPoints, &inverted_event);
@@ -1395,7 +1436,7 @@ void MainWindow::on_pushButton_CANCEL_clicked() {
   ui->manualTemp->setVisible(false);
   ui->pushButton_RIGHT->setEnabled(true);
   ui->pushButton_LEFT->setEnabled(true);
-  ui->pushButton_CANCEL->setEnabled(false);
+  //ui->pushButton_CANCEL->setEnabled(false);
   ui->pushButton_OK->setEnabled(true);
 
   ui->pushButton_LEFT->setStyleSheet(
@@ -1455,10 +1496,10 @@ void MainWindow::on_SimpleExpert_clicked() {  // Simple\expert
     ui->SimpleExpert->setText("EXPERT");
   } else {
     //clkb = 1;
-    ui->plot->legend->setVisible(true);
+    //ui->plot->legend->setVisible(true);
     ui->listWidget_Channels->setVisible(true);
     ui->gridGroupBox->setVisible(true);
-    ui->pushButton_ResetVisible->setVisible(true);
+    //ui->pushButton_ResetVisible->setVisible(true);
     ui->PlotControlsBox->setVisible(true); // Hide uPlotControlsBox
     ui->SimpleExpert->setText("SIMPLE");
   }
@@ -1487,6 +1528,7 @@ void MainWindow::on_listWidget_Channels_itemDoubleClicked(
 
 void MainWindow::on_pushButton_clicked() {
   ui->comboPort->clear();
+  ui->comboBaud->clear();
   /* List all available serial ports and populate ports combo box */
   for (QSerialPortInfo port : QSerialPortInfo::availablePorts()) {
     ui->comboPort->addItem(port.portName());
@@ -1634,10 +1676,11 @@ void MainWindow::on_pushButton_2_clicked() // Profile Settings Button
   ui->pushButton_SendToCom->click();
 
   //profilread();
-  dialog->buttonPressed();
-  dialog->exec(); // block main window reaction
-
+ // dialog->buttonPressed();
+  dialog->show();
+ // dialog->exec(); // block main window reaction
 }
+
 
 void MainWindow::profilread() {
   QString data = ui->textSend_UartWindow->toPlainText();
@@ -1683,7 +1726,7 @@ void MainWindow::on_HotStart_clicked() {
   ui->pushButton_OK->setEnabled(false);
   ui->pushButton_OK->setStyleSheet("QPushButton { background-color: grey; }\n");
 
-  ui->pushButton_CANCEL->setEnabled(true);
+ // ui->pushButton_CANCEL->setEnabled(true);
   ui->pushButton_CANCEL->setStyleSheet(
       "QPushButton:enabled { background-color: rgb(250,0,0); }\n"
       "QPushButton:enabled { color: rgb(0,0,0); }\n");
@@ -1723,7 +1766,7 @@ void MainWindow::on_manulabutton_clicked() {
   ui->pushButton_RIGHT->setEnabled(false);
   ui->pushButton_LEFT->setEnabled(false);
   ui->pushButton_OK->setEnabled(false);
-  ui->pushButton_CANCEL->setEnabled(true);
+  //ui->pushButton_CANCEL->setEnabled(true);
 
   ui->pushButton_UP->setEnabled(true);
   ui->pushButton_UP->setStyleSheet(
@@ -1754,63 +1797,200 @@ void MainWindow::on_manulabutton_clicked() {
 
 
 void MainWindow::plot_Profile(QString timeStamps, QString temperatures, int name) {
-    QStringList timeStampList = timeStamps.split(",", Qt::KeepEmptyParts);
-    QStringList temperatureList = temperatures.split(",", Qt::KeepEmptyParts);
+    QStringList timeStampList = timeStamps.split(",", Qt::SkipEmptyParts);
+    QStringList temperatureList = temperatures.split(",", Qt::SkipEmptyParts);
     QVector<double> timeStampsVector, temperaturesVector;  // Помещаем все данные в вектор для отрисовки графика
+    int min_size = 0;
 
     if (timeStampList.size() != 0){
+        if (timeStampList.size() > temperatureList.size()){
+          min_size = temperatureList.size();} else { min_size = timeStampList.size();}
+
     // Convert the string arrays to vectors of doubles
-        for (int i = 0; i < timeStampList.size(); i++) {
+        for (int i = 0; i < min_size; i++) {
             double timeStamp = timeStampList[i].toDouble();
             double temperature = temperatureList[i].toDouble();
             timeStampsVector.push_back(timeStamp);
             temperaturesVector.push_back(temperature);
         }
-            // Create a new layer for the scatter plot
-           // QCPLayer* scatterLayer = new QCPLayer(ui->plot, "Scatter");
-           //  ui->plot->addGraph();
-            // QCPGraph *graph = ui->plot->graph(name);
-           //  qDebug ( "C Style Info Message" );
-          //  QCPGraph *graph1 = ui->plot->addGraph();
-
-           // ui->plot->addLayer(name, ui->plot->layer("main"), QCustomPlot::limBelow); // рисовать профиль под основным слоем графиков.
-
-            // Create a scatter plot
-            // graph->setCurrentLayer(name); //выбрать слой профиля
-
-            // добавить новый plottabe name
-             //ui->plot->graph()->setLayer(name);
+               ui->plot->graph(name)->setSelectable(QCP::SelectionType(QCP::stSingleData));
+               //ui->plot->graph(name)->setSelectable(QCP::SelectionType(QCP::stDataRange));
                ui->plot->graph(name)->setData(timeStampsVector, temperaturesVector);
                ui->plot->graph(name)->setPen(line_colors[name % CUSTOM_LINE_COLORS]);
-              // ui->plot->graph(channel)->addData (dataPointNumber, newData[channel].toDouble());
-
-
-              // Set the scatter plot properties
-              // ui->plot->graph()->setData(timeStampsVector, temperaturesVector);
-              //ui->plot->graph()->setLineStyle(QCPGraph::lsNone);
-               ui->plot->graph(name)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssCircle, 8));
-
+               ui->plot->graph(name)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssCircle, 6));
                ui->plot->replot();
-
-           // ui->plot->setCurrentLayer("main");
-           // ui->plot->replot();
     }
 }
 
+//void MainWindow::plottableClicked(QCPAbstractPlottable *plottable, int dataIndex, QMouseEvent *event)
+//{
+
+//}
+
 void MainWindow::plot_All_Profile(){
 
-
-    clear_plottables_data();
-
+    clear_profile_graph();
     plot_Profile(profiledata.values["time_step_top"], profiledata.values["temperature_step_top"], 9);
     plot_Profile(profiledata.values["time_step_bottom"], profiledata.values["temperature_step_bottom"], 10);
     plot_Profile(profiledata.values["time_step_pcb"], profiledata.values["temperature_step_pcb"], 11);
     profiledata.values.clear();
 };
 
-void MainWindow::clear_plottables_data(){
+void MainWindow::clear_profile_graph(){  // clear profile graph
+    for (int i=9; i<11; i++){
+    ui->plot->graph(i)->data()->clear();
+    }
+
+}
+
+void MainWindow::clear_plottables_graph(){ // clear temeratures graph recieved from station
     for (int i=0; i<9; i++){
     ui->plot->graph(i)->data()->clear();
     }
     dataPointNumber = 0;
 }
+
+void MainWindow::handleMousePress(QMouseEvent* event) { // one time left click
+    // Check if the left mouse button was pressed draw point stats
+    if (profileEditEnable){
+    if (event->button() == Qt::RightButton) {
+      // Get the plot coordinates of the mouse click
+       double xx = ui->plot->xAxis->pixelToCoord(event->pos().x());
+       double yy = ui->plot->yAxis->pixelToCoord(event->pos().y());
+       int dataIndex = selectedDataIndex;
+        // If a data point was found, update its value
+        if (dataIndex >= 0) {
+           // selectedPlottable->interface1D()->dataMainKey(dataIndex) = x;
+            QCPGraph *selected = ui->plot->selectedGraphs().first();
+            (selected->data()->begin()+dataIndex)->value = yy;
+            ui->plot->setCursor(Qt::ClosedHandCursor);
+            ui->plot->replot();
+        }
+       // QString message1 = QString(" button move to: %1 temp: %2°  ").arg(xx).arg(yy);
+       //  ui->statusBar->showMessage(message1);
+    }
+    }
+    //else {ui->plot->deselectAll();}
+}
+
+
+void MainWindow::plottableDoubleClicked(QCPAbstractPlottable *plottable, int dataIndex, QMouseEvent *event){
+    // ui->statusBar->showMessage("Click2!");
+    double dataValue = plottable->interface1D()->dataMainValue(dataIndex);
+    double datakey = plottable->interface1D()->dataMainKey(dataIndex);
+   // QString name = plottable->name();
+    double x0 = datakey; // time
+    double y0 = dataValue; // temp
+
+    selectedPlottable = plottable; // Store for Future use
+    selectedDataIndex = dataIndex; // Plottable Selected point, Store for Future use
+
+    //calculate show time,temp, dt, dT, dT\dt
+    if (dataIndex >= 0){
+
+        double xp = plottable->interface1D()->dataMainKey(dataIndex-1); // time
+        double yp = plottable->interface1D()->dataMainValue(dataIndex-1); // temp
+
+      //  double yn = plottable->interface1D()->dataMainValue(dataIndex+1);
+      //  double xn = plottable->interface1D()->dataMainKey(dataIndex+1);
+        QString message1 = QString("Time: %1 temp: %2°  ").arg(x0).arg(y0);
+        QString message2 = QString("dT: %1sec dt: %2°  ").arg(x0-xp).arg(y0-yp);
+        QString message3 = QString("dT/dt: %1°/sec.").arg((y0-yp)/(x0-xp));
+
+       // DataViewDialog* dlg = new DataViewDialog();
+        //QString metadata = dm.getMetadata(name,dataIndex);
+        //QString metadata("1425322307:r:46.06:g:11.53:y:32.09");
+        //QString metadata("A: 110.,138.6,164.8 ");
+        //dlg->SetData(name,metadata,x0, y0, xp, yp, xn, yn); +y0+xp+yp+xn+yn
+       // dlg->show();
+     ui->statusBar->showMessage(message1+message2+message3);
+    }
+};
+
+
+/**
+ * @brief Prints coordinates of mouse pointer in status bar on mouse release
+ * @param event
+ */
+void MainWindow::onMouseMoveInPlot(QMouseEvent *event) {
+
+    int xx = int(ui->plot->xAxis->pixelToCoord(event->x()));
+    int yy = int(ui->plot->yAxis->pixelToCoord(event->y()));
+  if(profileEditEnable){
+    if (event->buttons() & Qt::RightButton){
+     // ui->statusBar->showMessage("right");
+      int dataIndex = selectedDataIndex;
+      if (dataIndex >= 0) {
+
+
+         QCPGraph *selected = ui->plot->selectedGraphs().first(); //find what plottable have selected point
+          (selected->data()->begin()+dataIndex)->value = yy; // assign Temperature value to selected point
+         double x0 = selected->interface1D()->dataMainKey(dataIndex); // current time at point, not cursor position
+         double xp = selected->interface1D()->dataMainKey(dataIndex-1); // time
+         double yp = selected->interface1D()->dataMainValue(dataIndex-1); // temp
+         QString message1 = QString("Time: %1 temp: %2°  ").arg(x0).arg(yy);
+         QString message2 = QString("dT: %1sec dt: %2°  ").arg(x0-xp).arg(yy-yp);
+         QString message3 = QString("dT/dt: %1°/sec.").arg((yy-yp)/(x0-xp));
+          ui->plot->replot();
+          ui->statusBar->showMessage(message1+message2+message3);
+      }
+    }
+  }
+  else{
+      QString coordinates("X: %1 Y: %2");
+      coordinates = coordinates.arg(xx).arg(yy);
+      ui->statusBar->showMessage(coordinates);
+  }
+}
+/** ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
+    void MainWindow::handleMouseRelease(QMouseEvent* event) {
+        if (profileEditEnable){// Check if the right mouse button was released
+        if (event->button() == Qt::RightButton) {
+            // Deselect all points and reset the cursor shape
+            //ui->plot->setMouseTracking(false);
+            ui->plot->setCursor(Qt::ArrowCursor);
+            ui->statusBar->showMessage("Released");
+            // Export plot data to plot_Profile function
+            exportPlotToProfileData(); // Claim this function at the and of editing.
+
+            selectedDataIndex = -1;
+            selectedPlottable = nullptr;
+            ui->plot->deselectAll();
+
+            //plot_Profile(timeStamps, temperatures, selectedPlottable->name());
+        }
+        }
+
+    }
+
+    void MainWindow::exportPlotToProfileData() { // export data to settings window
+        if (profileEditEnable){
+        QMap<QString, QVector<QPair<double, double>>> graphData;
+        foreach (QCPGraph *graph, ui->plot->selectedGraphs()) {
+            QVector<QPair<double, double>> dataPoints;
+            QString timeStamps, temperatureStamps;
+            QString graphName = graph->name();
+            QString temperatureText = QString("temperature_step_%1: ").arg(graphName);
+            QString timeText = QString("time_step_%1: ").arg(graphName);
+
+            for (int i = 0; i < graph->data()->size(); i++) {
+                double timestamp = graph->data()->at(i)->key;
+                double temperature = graph->data()->at(i)->value;
+                timeStamps.append(QString::number(timestamp)+",");
+                temperatureStamps.append(QString::number(temperature)+",");
+                //dataPoints.append(QPair<double, double>(timestamp, temperature));
+            }
+            //graphData.insert(graphName, dataPoints);
+            emit sendData(temperatureText+temperatureStamps);
+            emit sendData(timeText+timeStamps);
+           // profiledata.addValue("Plot Data", QVariant::fromValue(graphData).toString());
+           // ui->statusBar->showMessage(profiledata.values[graphName]);
+           //
+        }
+        }
+    }
+    void MainWindow::switch_EDIT_MODE(bool mode){
+        profileEditEnable = mode;
+        ui->plot->setInteraction (QCP::iSelectPlottables, mode);
+    }

@@ -82,6 +82,8 @@ public:
   };
   ProfileData profiledata;
 
+  bool profileEditEnable = false;
+
 
 private slots:
   void on_comboPort_currentIndexChanged(
@@ -167,11 +169,17 @@ private slots:
 
   void on_manulabutton_clicked();
 
-  void plot_Profile(QString timeStamps, QString temperatures, int name);
+  //void on_graph_point_clicked();
+
+  void handleMousePress(QMouseEvent* event);
+  void handleMouseRelease(QMouseEvent* event);
+
   void plot_All_Profile(); // Print 3 graphs of loaded thermalprofile
-  void clear_plottables_data();
-
-
+  void clear_plottables_graph(); // clear graphs arrived from station
+  void clear_profile_graph(); // clear profile graphs
+  void plottableDoubleClicked(QCPAbstractPlottable *plottable, int dataIndex, QMouseEvent *event);
+  void exportPlotToProfileData();
+  void switch_EDIT_MODE(bool mode);
 
 signals:
   void portOpenFail();            // Emitted when cannot open port
@@ -270,6 +278,7 @@ private:
   // void setSettingsValue(QString line, QString value);
 
   int STATE; // State of recieiving message from port
+  int PREV_STATE; // State before interruption
   int STATEAL;
 
   int NUMBER_OF_POINTS; // Number of points plotted
@@ -287,6 +296,15 @@ private:
   void loadSettings(); // load settings to populate preferences from config file
   void saveSettings(); // save preferences in config file
                        // void closeEvent(QCloseEvent *bar);
+
+  QVector<double> timeStampsVector;
+  QVector<double> temperaturesVector;
+  void plot_Profile(QString timeStamps, QString temperatures, int name);
+
+  QCPAbstractPlottable* selectedPlottable = nullptr;
+  int selectedDataIndex = -1;
+
+
 };
 
 #endif // MAINWINDOW_HPP

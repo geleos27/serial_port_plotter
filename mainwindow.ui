@@ -999,11 +999,13 @@
           </property>
           <property name="font">
            <font>
-            <family>Noto Sans</family>
+            <family>Arial Narrow</family>
             <pointsize>14</pointsize>
-            <italic>true</italic>
+            <italic>false</italic>
             <bold>true</bold>
             <underline>false</underline>
+            <stylestrategy>PreferAntialias</stylestrategy>
+            <kerning>false</kerning>
            </font>
           </property>
           <property name="frameShape">

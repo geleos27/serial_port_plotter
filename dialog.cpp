@@ -13,8 +13,8 @@
 
 Dialog::Dialog(QWidget *parent) : QDialog(parent), ui(new Ui::Dialog) {
   ui->setupUi(this);
-  ui->SEND->setEnabled(false);
-  ui->savefile->setEnabled(false);
+  ui->SEND->setEnabled(true);
+  //ui->savefile->setEnabled(false);
   ui->buttonBox->button(QDialogButtonBox::Ok)->setEnabled(false);
   ui->kd1->setValidator(new QIntValidator(0, 255, this));
   ui->kd2->setValidator(new QIntValidator(0, 255, this));
@@ -83,8 +83,8 @@ void Dialog::setSettingsValue(QString name, QString value) {
 
 // кнопка чтение профиля из eeprom
 void Dialog::on_read_clicked() {
-  ui->read->setEnabled(false);
-  ui->readfile->setEnabled(false);
+  //ui->read->setEnabled(false);
+  //ui->readfile->setEnabled(false);
   ui->readwriteOK->setText("Reading eeprom...");
   readflag = 1;
   emit buttonPressed(); //отправить команду станции на вывод профиля в порт
@@ -140,7 +140,7 @@ void Dialog::on_buttonBox_accepted() {
 
 // запись профиля в память станции
 void Dialog::on_SEND_clicked() {
-  ui->SEND->setEnabled(false);
+  //ui->SEND->setEnabled(false);
   ui->read->setEnabled(true);
   readflag = 0;
   ui->readwriteOK->setText("Sending...");
@@ -206,11 +206,11 @@ void Dialog::on_clearbutton_clicked() {
   ui->max_correction_bottom->clear();
   ui->hold_lenght->clear();
   ui->participation_rate_top->clear();
-  ui->savefile->setEnabled(false);
+  //ui->savefile->setEnabled(false);
   ui->readwriteOK->setText("All data clear");
-  ui->SEND->setEnabled(false);
+  //ui->SEND->setEnabled(false);
   ui->buttonBox->button(QDialogButtonBox::Ok)->setEnabled(false);
-  ui->readfile->setEnabled(true);
+  //ui->readfile->setEnabled(true);
   ui->read->setEnabled(true);
   ui->aliasprofile->setStyleSheet("");
   ui->kd1->setStyleSheet("");
@@ -268,8 +268,8 @@ void Dialog::on_readfile_clicked() {
   ui->savefile->setEnabled(true);
   ui->SEND->setEnabled(true);
   ui->buttonBox->button(QDialogButtonBox::Ok)->setEnabled(true);
-  ui->read->setEnabled(false);
-  ui->readfile->setEnabled(false);
+  //ui->read->setEnabled(false);
+  //ui->readfile->setEnabled(false);
   ui->readwriteOK->setText("Reading from file OK");
 }
 
@@ -312,6 +312,21 @@ void Dialog::on_savefile_clicked() {
   ui->readwriteOK->setText("Saving profile to file OK.");
   return;
 }
+
+
+void Dialog::on_EDIT_MODE_clicked(){
+    if (!profileEditEnable){  // Enable  Editing
+     ui->EDIT_MODE->setText("APPLY EDIT");
+     profileEditEnable = true;
+     emit toggle_EDIT_MODE(profileEditEnable);
+    }
+    else { // Finish  Editing
+    ui->EDIT_MODE->setText("EDIT MODE");
+    profileEditEnable = false;
+    emit toggle_EDIT_MODE(profileEditEnable);
+    }
+}
+
 
 /*
 void Dialog::on_aliasprofile_textChanged(const QString &text) {
