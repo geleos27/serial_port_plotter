@@ -4,7 +4,7 @@ Originally was an application that displays real time data from serial port.
 Has been modified heavily, to act as digital control software for arduino-based reflow station.
 (In the archive - software for Windows + Arduino sketch + assembly/installation/setup information)
 
-Suitable for both building from scratch or upgrading existing commercial equipment.
+### Suitable for both building from scratch or modifying existing commercial equipment.
 
 Component selection is focused on parts accessibility and ease of assembly.
 Arduino Mega2560 + 3x Max6675 + 3 K-type thermocouples + 2 SSRs, + optional ILI9486 display & buttons
