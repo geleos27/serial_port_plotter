@@ -1,30 +1,22 @@
-# Serial Port Plotter
+# Serial Port Plotter | Thermo plotter |
 
-This is a Windows application that displays real time data from serial port. The application is 32-bit and built with Qt and QCustomPlot library.
-Has been modified bit, to act as digital control panel for arduino reflow station controller.
+Originally was an application that displays real time data from serial port.
+Has been modified heavily, to act as digital control panel for arduino-based reflow station.
 
 [DOWNLOAD version 0.63 for Win x64  (7-8-10)](0.63.zip)
 
-more details [at Amperka Forum](https://forum.amperka.ru/threads/%D0%98%D0%BA-%D0%BF%D0%B0%D1%8F%D0%BB%D1%8C%D0%BD%D0%B0%D1%8F-%D1%81%D1%82%D0%B0%D0%BD%D1%86%D0%B8%D1%8F-%D0%BD%D0%B0-arduino-mega-2560-%D0%B4%D0%BE%D1%80%D0%B0%D0%B1%D0%BE%D1%82%D0%BA%D0%B0-%D1%81%D0%BA%D0%B5%D1%82%D1%87%D0%B0-ars_v2_lilium_jsn-%D1%87-2.21236/#post-269853)
+origin Forum topic about self-made soldering stations: [at Amperka Forum](https://forum.amperka.ru/threads/%D0%98%D0%BA-%D0%BF%D0%B0%D1%8F%D0%BB%D1%8C%D0%BD%D0%B0%D1%8F-%D1%81%D1%82%D0%B0%D0%BD%D1%86%D0%B8%D1%8F-%D0%BD%D0%B0-arduino-mega-2560-%D0%B4%D0%BE%D1%80%D0%B0%D0%B1%D0%BE%D1%82%D0%BA%D0%B0-%D1%81%D0%BA%D0%B5%D1%82%D1%87%D0%B0-ars_v2_lilium_jsn-%D1%87-2.21236/#post-269853)
+
+
+## 2 control modes:
+ - from PC via this application
+ - Standalone with display & buttons
 
 ## Features
-
-- No axes limit: An unknown/new channel data create a new graph and uses it (palette of 14 cyclic colors)
-- No data point limit: All received data is kept so user can explore old data
-- No baud rate limit: Tested up to 912600 bps
-- Zooming and dragging using the mouse (wheel or click, restricted to X axis only)
-- Moving around the plot displays the X and Y values of the graph in the status bar
-- Channel's name legend (double-click to modify)
-- Channel selection (click on legend's text)
-- Supports positive and negative integers and floats
-- Exports to PNG
-- Exports to CSV
-- Autoscale to visible graph
-- Can send User commands over COM
-- Have buttons for sending common commands
-- Have big number to show Value of channel
-- Can actually SAVE and load settings
-- Plays sound if recieved "$@;" command over com
+ - automatic Soldering following thermal profile
+ - acting as lower heater (PCB preheater)
+ - editing and saving profiles in station memory and in a file (PC application)
+ - Displaying soldering graph (PC application)
 
 ## Interface Screenshot
 
@@ -36,13 +28,10 @@ more details [at Amperka Forum](https://forum.amperka.ru/threads/%D0%98%D0%BA-%D
 
 ## How to use the application
 
-Just send your integer data over the serial port. The application expects certain format so it can differentiate between values. Each message you send must start with '$' and end with ';' (semi-colon) and the integers inside need to be space-separated. The Help button displays comprehensive instructions.
+Assemble everything according to schematics. 
+Upload sketch to Arduino.
+Made some tweaks to soldering profiles.
 
-Use the mouse wheel over controls to change its values and use it over plot area to zoom.
-
-When stopped/paused, plot area can be dragged and file saving can be enabled.
-
-To enable the file saving, click on the document button before starting the plot.
 
 Double click on a channel in the Graph Control panel to hide/show a specific channel.
 
