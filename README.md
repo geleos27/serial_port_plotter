@@ -11,7 +11,7 @@ Arduino Mega2560 + 3x Max6675 + 3 K-type thermocouples + 2 SSRs, + optional ILI9
 
 [DOWNLOAD version 0.63 for Win x64  (7-8-10)](0.63.zip)
 
-[MANUAL about usage\assembly\tips](Manual%20v0.1.docx)
+[GUIDE about usage\assembly\tips](Manual%20v0.1.docx)
 
 origin Forum topic about self-made soldering stations: [at Amperka Forum](https://forum.amperka.ru/threads/%D0%98%D0%BA-%D0%BF%D0%B0%D1%8F%D0%BB%D1%8C%D0%BD%D0%B0%D1%8F-%D1%81%D1%82%D0%B0%D0%BD%D1%86%D0%B8%D1%8F-%D0%BD%D0%B0-arduino-mega-2560-%D0%B4%D0%BE%D1%80%D0%B0%D0%B1%D0%BE%D1%82%D0%BA%D0%B0-%D1%81%D0%BA%D0%B5%D1%82%D1%87%D0%B0-ars_v2_lilium_jsn-%D1%87-2.21236/#post-269853)
 
