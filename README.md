@@ -15,13 +15,13 @@ origin Forum topic about self-made soldering stations: [at Amperka Forum](https:
 
 ## 2 control modes:
  - from PC via this application
- - Standalone with display & buttons
+ - standalone with display & buttons
 
 ## Features
  - automatic Soldering following thermal profile
  - acting as lower heater (PCB preheater)
  - editing and saving profiles in station memory and in a file (PC application)
- - Displaying soldering graph (PC application)
+ - displaying soldering graph (PC application)
 
 ## Interface Screenshot
 
