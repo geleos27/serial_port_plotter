@@ -9,7 +9,7 @@ Has been modified heavily, to act as digital control software for arduino-based 
 Component selection is focused on parts accessibility and ease of assembly.
 Arduino Mega2560 + 3x Max6675 + 3 K-type thermocouples + 2 SSRs, + optional ILI9486 display & buttons
 
-[DOWNLOAD version 0.63 for Win x64  (7-8-10)](0.63.zip)
+[DOWNLOAD version 0.64 for Win x64  (7-8-10)](0.64.zip)
 
 [GUIDE about usage\assembly\tips](Manual%20v0.1.docx)
 
